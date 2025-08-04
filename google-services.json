@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "416638921824",
+    "project_id": "sp-healthapp",
+    "storage_bucket": "sp-healthapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:416638921824:android:aaed3bbb65d7c6abf06705",
+        "android_client_info": {
+          "package_name": "com.anonymous.smartHealthSP"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDlL3jX1gz_EnCxhtZ1LrHTNQJoIYbCjcE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

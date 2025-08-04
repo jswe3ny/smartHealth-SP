@@ -25,6 +25,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="smarthealthsp"/>
+        <data android:scheme="exp+smarthealth-sp"/>
       </intent-filter>
     </activity>
   </application>
