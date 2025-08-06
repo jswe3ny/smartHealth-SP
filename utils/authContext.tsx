@@ -30,8 +30,8 @@ const AuthContext = createContext<{
   currentUser: null,
   isLoading: false,
 });
-
 // Thi
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)); //-- debug use to simulate api calls
 
 export function AuthProvider({ children }: PropsWithChildren) {
   // ... state and useEffect remain the same
@@ -45,26 +45,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   // This effect listens for real-time authentication changes from Firebase
   useEffect(() => {
+    // SplashScreen.preventAutoHideAsync();
+
     // const auth = getAuth();
     const unsubscribe = onAuthStateChanged(
       auth,
-      (user: FirebaseAuthTypes.User | null) => {
-        console.log("user: " + user?.email);
+      async (user: FirebaseAuthTypes.User | null) => {
+        // await delay(10000);
         setCurrentUser(user);
         setIsLoading(false);
       }
     );
     // Cleanup the listener when the component unmounts
     return unsubscribe;
-  }, [auth]);
+  }, [auth, isLoading]);
 
   const accountSignIn = async (email: string, password: string) => {
-    console.log("sign in attempt");
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       console.error("Sign-in error:", error);
-      // Re-throw the error so the UI can catch it and display a message
       throw error;
     }
   };

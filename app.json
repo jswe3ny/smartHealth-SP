@@ -24,6 +24,8 @@
       "bundler": "metro",
       "output": "static"
     },
+    "icon": "./assets/images/react-logo@2x.png", // ✅ FIX 1: Add this line (use your icon's path)
+
     "plugins": [
       "expo-router",
       [
@@ -32,7 +34,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#26b521"
         }
       ],
       "@react-native-firebase/app",

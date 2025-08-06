@@ -1,3 +1,4 @@
+import { useAuth } from "@/utils/authContext";
 import { useRouter } from "expo-router";
 import React from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
@@ -5,9 +6,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LandingScreen() {
   const router = useRouter();
+  const { isLoading } = useAuth();
   return (
     <SafeAreaView>
       <Text>Laning Page</Text>
+      <Text>loading: {isLoading.toString()}</Text>
+
       <Pressable style={styles.button} onPress={() => router.push("/login")}>
         <Text style={styles.buttonText}>Login</Text>
       </Pressable>

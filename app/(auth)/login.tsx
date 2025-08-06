@@ -14,10 +14,9 @@ import {
 } from "react-native";
 
 const AuthForm = () => {
-  const { accountSignIn } = useAuth();
+  const { isLoading, accountSignIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handleAuthentication = async () => {
     // Basic validation
@@ -26,19 +25,14 @@ const AuthForm = () => {
       return;
     }
 
-    setIsLoading(true);
     setError(null);
     try {
       console.log("Attempt login for", email);
       await accountSignIn(email, password);
       console.log("Login successful!");
-      router.replace("/home");
-      // navigation/redirection will happen via your root layout or caller
     } catch (e: any) {
       console.error("Login error:", e);
       setError(e.message ?? "Unknown error");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -46,6 +40,7 @@ const AuthForm = () => {
     <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.innerContainer}>
+          <Text>loading: {isLoading.toString()}</Text>
           <Text style={styles.title}>Welcome Back</Text>
 
           <TextInput
@@ -90,6 +85,7 @@ const AuthForm = () => {
               Need an account? Sign Up
             </Text>
           </Pressable>
+          {error ? <Text>ERRROR: {error}</Text> : ""}
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
