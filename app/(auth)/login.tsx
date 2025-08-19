@@ -1,4 +1,4 @@
-import { useAuth } from "@/utils/authContext";
+import { useAuth } from "@/contexts/authContext";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {

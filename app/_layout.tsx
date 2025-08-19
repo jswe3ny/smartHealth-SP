@@ -1,48 +1,37 @@
-import { AuthProvider, useAuth } from "@/utils/authContext";
+// app/_layout.tsx
+import { AuthProvider, useAuth } from "@/contexts/authContext";
+import { useUserInfo } from "@/hooks/useUserInfo";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Stack, useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import "react-native-reanimated";
-// import { SafeAreaView } from "react-native-safe-area-context";
+import { Slot, SplashScreen } from "expo-router";
+import React, { useEffect } from "react";
 
 SplashScreen.preventAutoHideAsync();
 
-function InnerLayout() {
-  const { currentUser, isLoading } = useAuth();
-  const router = useRouter();
-  useEffect(() => {
-    if (isLoading) return; // Do nothing while loading, splash screen stays visible.
-
-    if (!currentUser) {
-      router.replace("/");
-    } else {
-      router.replace("/home");
-    }
-    SplashScreen.hideAsync();
-  }, [isLoading, currentUser, router]);
-  if (isLoading) {
-    return null;
-  }
-  return (
-    <ThemeProvider value={DefaultTheme}>
-      <Stack
-        screenOptions={{
-          headerShown: true,
-          animation: "none",
-        }}
-      >
-        <Stack.Screen name="(main)" />
-        <Stack.Screen name="(auth)" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
-}
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <InnerLayout />
+      <ThemeProvider value={DefaultTheme}>
+        <BootGate>
+          <Slot screenOptions={{ showHeader: true }} />
+        </BootGate>
+      </ThemeProvider>
     </AuthProvider>
   );
+}
+
+function BootGate({ children }: { children: React.ReactNode }) {
+  const { currentUser, isLoading: authLoading } = useAuth();
+  const { isLoading: profileLoading } = useUserInfo(); // fetches only after uid exists
+
+  // Only wait on profile if we actually have a signed-in user
+  const booting = authLoading || (!!currentUser?.uid && profileLoading);
+
+  useEffect(() => {
+    if (!booting) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [booting]);
+
+  if (booting) return null; // keep splash visible
+  return <>{children}</>;
 }

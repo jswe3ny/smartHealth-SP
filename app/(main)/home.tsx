@@ -1,8 +1,7 @@
-import { useAuth } from "@/utils/authContext";
+import { useAuth } from "@/contexts/authContext";
+import { useUserInfo } from "@/hooks/useUserInfo";
 import React from "react";
 import { Button, Text, View } from "react-native";
-
-import { useUserInfo } from "@/hooks/useUserInfo";
 
 export default function Home() {
   const { currentUser, isLoading, accountSignOut } = useAuth();

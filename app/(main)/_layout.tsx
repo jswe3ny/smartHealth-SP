@@ -1,9 +1,21 @@
-import { useAuth } from "@/utils/authContext";
-import { Slot, useRouter } from "expo-router";
+import { useAuth } from "@/contexts/authContext";
+import { useUserInfo } from "@/hooks/useUserInfo";
+import { Redirect, Stack } from "expo-router";
+import { SafeAreaView } from "react-native";
 
-export default function RootLayout() {
-  const router = useRouter();
-  const { currentUser, isLoading } = useAuth();
+export default function AppLayout() {
+  const { currentUser, isLoading: authLoading } = useAuth();
+  const { profile, isLoading: profileLoading } = useUserInfo();
 
-  return <Slot />;
+  if (authLoading || profileLoading) return null; // root splash still up
+  if (!currentUser) return <Redirect href="/" />;
+  if (!profile?.onboardingComplete) return <Redirect href="/onboarding" />;
+
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: true }}>
+        <Stack.Screen name="home" />
+      </Stack>
+    </SafeAreaView>
+  );
 }

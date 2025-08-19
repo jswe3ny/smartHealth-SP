@@ -1,3 +1,4 @@
+import { userAccountInitialization } from "@/utils/user.repo";
 import { getApp } from "@react-native-firebase/app";
 import {
   createUserWithEmailAndPassword,
@@ -33,7 +34,7 @@ const AuthContext = createContext<{
 // Thi
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)); //-- debug use to simulate api calls
 
-export function AuthProvider({ children }: PropsWithChildren) {
+export const AuthProvider = ({ children }: PropsWithChildren) => {
   // ... state and useEffect remain the same
   const [currentUser, setCurrentUser] = useState<FirebaseAuthTypes.User | null>(
     null
@@ -45,9 +46,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   // This effect listens for real-time authentication changes from Firebase
   useEffect(() => {
-    // SplashScreen.preventAutoHideAsync();
-
-    // const auth = getAuth();
     const unsubscribe = onAuthStateChanged(
       auth,
       async (user: FirebaseAuthTypes.User | null) => {
@@ -70,10 +68,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const accountSignUp = async (email: string, password: string) => {
+    let signedUpUser: FirebaseAuthTypes.UserCredential | null = null;
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      signedUpUser = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      await userAccountInitialization(signedUpUser.user.uid, email);
     } catch (error) {
       console.error("Sign-up error:", error);
+      // User sign up success, but userAccountInitialization failed -- delete just created user
+      if (signedUpUser?.user) {
+        signedUpUser.user.delete();
+      }
       // Re-throw for the UI
       throw error;
     }
@@ -98,7 +106,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
 
 export function useAuth() {
   return useContext(AuthContext);
