@@ -1,17 +1,17 @@
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
-import { upsert } from "@/utils/firestore-helpers";
-import { useRouter } from "expo-router";
+import { updateUserInfo } from "@/utils/user.repo";
+import { Timestamp } from "@react-native-firebase/firestore";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,19 +19,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export const Onboarding = () => {
   const { profile, isLoading: profileLoading } = useUserInfo();
   const { accountSignOut } = useAuth();
-
-  // const router = useRouter();
-
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [age, setAge] = useState("");
+  const [dob, setDOB] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = () => {
     if (!firstName.trim() || !lastName.trim()) return false;
-    const n = Number.parseInt(age, 10);
-    if (Number.isNaN(n) || n < 13 || n > 120) return false;
     return true;
   };
 
@@ -45,11 +40,11 @@ export const Onboarding = () => {
     setLoading(true);
     setError(null);
     try {
-      const n = Number.parseInt(age, 10);
-      await upsert(`user/${profile?.docId}`, {
+      const convertedDob = Timestamp.fromDate(new Date(dob));
+      await updateUserInfo(profile.docId, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        age: n,
+        dateOfBirth: convertedDob,
         onboardingComplete: true,
         currentGoals: [],
         prohibitedIngredients: [],
@@ -101,22 +96,29 @@ export const Onboarding = () => {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Age</Text>
+            <Text style={styles.label}>DOB</Text>
+
+            {/* ADD EVENT HANDLER FUNCTION FOR DATEPICKER */}
+            {/* <DateTimePicker
+              testID="dateTimePicker"
+              value={dob}
+              mode="date"
+              display="default"
+              onChange={setDOB}
+            /> */}
             <TextInput
-              value={age}
-              onChangeText={setAge}
+              value={dob}
+              onChangeText={setDOB}
               placeholder="e.g. 26"
-              keyboardType="number-pad"
               style={styles.input}
               returnKeyType="done"
-              maxLength={3}
             />
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <View style={styles.footer}>
-            <TouchableOpacity
+            <Pressable
               style={[
                 styles.button,
                 !canSubmit() || loading ? styles.buttonDisabled : null,
@@ -129,7 +131,7 @@ export const Onboarding = () => {
               ) : (
                 <Text style={styles.buttonText}>Submit</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

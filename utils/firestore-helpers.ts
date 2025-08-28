@@ -1,10 +1,15 @@
-// utils/firestore-helpers.ts
-import { doc, onSnapshot, setDoc } from "@react-native-firebase/firestore";
+import {
+  collection,
+  doc,
+  onSnapshot,
+  setDoc,
+} from "@react-native-firebase/firestore";
 import { db } from "./firebase";
 
 export type DocWithId<T> = { id: string; data: T };
 
 const dbRef = (path: string) => doc(db, path);
+export const genId = () => doc(collection(db, "_")).id;
 
 export const listenDocWithId = <T>(
   path: string,

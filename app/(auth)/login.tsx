@@ -1,8 +1,9 @@
+import { colors } from "@/assets/styles";
+import { Button } from "@/components/button";
 import { useAuth } from "@/contexts/authContext";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Keyboard,
   Pressable,
   SafeAreaView,
@@ -62,17 +63,14 @@ const AuthForm = () => {
             secureTextEntry
           />
 
-          <Pressable
-            style={styles.button}
+          <Button
+            title="Login"
             onPress={handleAuthentication}
+            size="lg"
+            bg={colors.primary}
+            fullWidth={true}
             disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Login</Text>
-            )}
-          </Pressable>
+          />
 
           <Pressable
             style={styles.toggleButton}
@@ -85,6 +83,15 @@ const AuthForm = () => {
               Need an account? Sign Up
             </Text>
           </Pressable>
+          {/* <Button
+            title="Create Account"
+            onPress={() => {
+              router.push("/createAccount");
+            }}
+            size="lg"
+            bg={colors.primary}
+            fullWidth={true}
+          /> */}
           {error ? <Text>ERRROR: {error}</Text> : ""}
         </View>
       </TouchableWithoutFeedback>

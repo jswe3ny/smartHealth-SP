@@ -32,10 +32,9 @@ const AuthContext = createContext<{
   isLoading: false,
 });
 // Thi
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)); //-- debug use to simulate api calls
+// const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)); //-- debug use to simulate api calls
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  // ... state and useEffect remain the same
   const [currentUser, setCurrentUser] = useState<FirebaseAuthTypes.User | null>(
     null
   );
@@ -44,7 +43,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const app = getApp();
   const auth = getAuth(app);
 
-  // This effect listens for real-time authentication changes from Firebase
+  // Listens for real-time authentication changes from Firebase
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
@@ -92,7 +91,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       await signOut(auth);
     } catch (error) {
       console.error("Sign-out error:", error);
-      // Re-throw for the UI
       throw error;
     }
   };
