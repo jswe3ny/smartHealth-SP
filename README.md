@@ -26,19 +26,18 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 ### First-time setup (macOS)
 1.) Download/set correct dependency versions
 2.) Run mac check script (Mac onlyy)
-```bash
-1. Install dependencies
-   npm install
-   ```
-2. Run verification script
-     ``` bash
+ ``` bash
      bash ./scripts/mac-check-env.sh
-     ```
-3. Build Ios and Android files
-     ``` bash
+ ```
+3. Install dependencies
+  ```bash
+   npm install
+  ```
+4. Build Ios and Android files
+   ``` bash
      npx expo run:ios
      npx expo run:android
-     ```
+   ```
 ### After platform of choice has been built
 1. Start the app
 
