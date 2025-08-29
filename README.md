@@ -35,16 +35,16 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
   ```
 4. Build Ios and Android files
-   ``` bash
+  ``` bash
      npx expo run:ios
      npx expo run:android
-   ```
+  ```
 ### After platform of choice has been built
 1. Start the app
 
-   ```bash
+  ```bash
    npx expo start
-   ```
+  ```
 
 In the output, you'll find options to open the app in a
 
