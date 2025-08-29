@@ -2,14 +2,39 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
 
+
+## Environment
+### Both Mac and Windows 
+
+- Node: 22.18 (use nvmrc) 
+- npm: 10.9.3
+- Expo CLI: 0.24.20 (Install globally with npm install -g expo-cli@0.24.20)
+- 
+### Java / Android
+
+- Java: 17.0.16 (Zulu OpenJDK LTS)
+- Gradle: 8.13 (via Gradle wrapper)
+- Kotlin: 2.0.21 (plugin-managed)
+- AGP: <fill from android/build.gradle>
+  
+###iOS Environment (macOS Only)
+- Ruby: 3.2.2
+- CocoaPods: 1.16.2
+- Xcode: 16.4+
+  
+## Get started
+### First-time setup (macOS)
+1.) Download/set correct dependency versions
+2.) Run mac check script (Mac onlyy)
+```bash
 1. Install dependencies
 
    ```bash
    npm install
+   npx expo run:ios || npx expo run:android
    ```
-
+### After platform of choice has been built
 2. Start the app
 
    ```bash
@@ -23,28 +48,11 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
+## Documentation
 
 To learn more about developing your project with Expo, look at the following resources:
 
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [React Native]:(https://reactnative.dev/docs/getting-started/): React Native basics
+- [React-Native-Firebase]:(https://rnfirebase.io/): React Native Expo Firebase Integration.
+- 
