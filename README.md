@@ -27,9 +27,9 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 1.) Download/set correct dependency versions
 
 2.) Run mac check script (Mac only)
- ``` bash
+  ``` bash
      bash ./scripts/mac-check-env.sh
- ```
+  ```
 3. Install dependencies
   ```bash
    npm install
