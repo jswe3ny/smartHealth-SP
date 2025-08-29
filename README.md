@@ -25,7 +25,8 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 ## Get started
 ### First-time setup (macOS)
 1.) Download/set correct dependency versions
-2.) Run mac check script (Mac onlyy)
+
+2.) Run mac check script (Mac only)
  ``` bash
      bash ./scripts/mac-check-env.sh
  ```
