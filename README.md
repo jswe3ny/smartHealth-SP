@@ -16,7 +16,6 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 - Java: 17.0.16 (Zulu OpenJDK LTS)
 - Gradle: 8.13 (via Gradle wrapper)
 - Kotlin: 2.0.21 (plugin-managed)
-- AGP: <fill from android/build.gradle>
   
 ###iOS Environment (macOS Only)
 - Ruby: 3.2.2
@@ -32,7 +31,8 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
    ```bash
    npm install
-   npx expo run:ios || npx expo run:android
+   npx expo run:ios
+npx expo run:android
    ```
 ### After platform of choice has been built
 2. Start the app
