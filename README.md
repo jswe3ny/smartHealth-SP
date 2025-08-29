@@ -32,7 +32,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
    npm install
    npx expo run:ios
-npx expo run:android
+   npx expo run:android
    ```
 ### After platform of choice has been built
 2. Start the app
