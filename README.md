@@ -28,14 +28,19 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 2.) Run mac check script (Mac onlyy)
 ```bash
 1. Install dependencies
-
-   ```bash
    npm install
-   npx expo run:ios
-   npx expo run:android
    ```
+2. Run verification script
+     ``` bash
+     bash ./scripts/mac-check-env.sh
+     ```
+3. Build Ios and Android files
+     ``` bash
+     npx expo run:ios
+     npx expo run:android
+     ```
 ### After platform of choice has been built
-2. Start the app
+1. Start the app
 
    ```bash
    npx expo start
