@@ -10,7 +10,7 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 - Node: 22.18 (use nvmrc) 
 - npm: 10.9.3
 - Expo CLI: 0.24.20 (Install globally with npm install -g expo-cli@0.24.20)
-- React-Native-Firebase (important) 
+- React-Native-Firebase 
 ### Java / Android
 
 - Java: 17.0.16 (Zulu OpenJDK LTS)
