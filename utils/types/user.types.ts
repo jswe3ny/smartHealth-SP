@@ -1,7 +1,7 @@
 import { Timestamp } from "@react-native-firebase/firestore";
 
 export type Goal = {
-  id?: string;
+  goalId?: string;
   description: string;
   endDate: Timestamp;
   startDate?: Timestamp;
@@ -9,7 +9,7 @@ export type Goal = {
 };
 
 export type ProhibitedIngredient = {
-  id?: string;
+  ingredientId?: string;
   name: string;
   reason: string;
   severity: number;

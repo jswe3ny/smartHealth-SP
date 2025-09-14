@@ -66,7 +66,7 @@ export default function TestFormsNative({ uid }: { uid: string }) {
   return (
     <ScrollView contentContainerStyle={styles.wrapper}>
       {/* Form 1: Add Goal */}
-      {/* <View style={styles.card}>
+      <View style={styles.card}>
         <Text style={styles.h2}>Add Goal</Text>
 
         <Text style={styles.label}>Name</Text>
@@ -103,10 +103,10 @@ export default function TestFormsNative({ uid }: { uid: string }) {
         <Pressable style={styles.button} onPress={submitGoal}>
           <Text style={styles.buttonText}>Save Goal</Text>
         </Pressable>
-      </View> */}
+      </View>
 
       {/* Form 2: Prohibited Ingredients */}
-      {/* <View style={styles.card}>
+      <View style={styles.card}>
         <Text style={styles.h2}>Prohibited Ingredient</Text>
 
         <Text style={styles.label}>Name</Text>
@@ -142,7 +142,7 @@ export default function TestFormsNative({ uid }: { uid: string }) {
         <Pressable style={styles.button} onPress={submitProhibited}>
           <Text style={styles.buttonText}>Save Prohibited Ingredient</Text>
         </Pressable>
-      </View> */}
+      </View>
       <View style={styles.card}>
         <Text style={styles.h2}>Basic Profile</Text>
 
