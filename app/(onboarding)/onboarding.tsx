@@ -1,5 +1,4 @@
 import { useAuth } from "@/contexts/authContext";
-import { useUserInfo } from "@/hooks/useUserInfo";
 import { updateUserInfo } from "@/utils/user.repo";
 import { Timestamp } from "@react-native-firebase/firestore";
 import React, { useState } from "react";
@@ -17,8 +16,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export const Onboarding = () => {
-  const { profile, isLoading: profileLoading } = useUserInfo();
-  const { accountSignOut } = useAuth();
+  // const { profile, isLoading: profileLoading } = useUserInfo();
+  const { accountSignOut, currentUser } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [dob, setDOB] = useState("");
@@ -31,7 +30,7 @@ export const Onboarding = () => {
   };
 
   const handleSubmit = async () => {
-    if (!profile?.docId) return;
+    if (!currentUser?.uid) return;
     if (!canSubmit()) {
       setError("Please fill all fields correctly.");
       return;
@@ -41,7 +40,7 @@ export const Onboarding = () => {
     setError(null);
     try {
       const convertedDob = Timestamp.fromDate(new Date(dob));
-      await updateUserInfo(profile.docId, {
+      await updateUserInfo(currentUser?.uid, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         dateOfBirth: convertedDob,
@@ -109,7 +108,7 @@ export const Onboarding = () => {
             <TextInput
               value={dob}
               onChangeText={setDOB}
-              placeholder="e.g. 26"
+              placeholder="YYYY-MM-DD - add datepicker"
               style={styles.input}
               returnKeyType="done"
             />

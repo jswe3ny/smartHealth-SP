@@ -1,21 +1,30 @@
-import { genId, listenDocWithId, upsert } from "@/utils/firestore-helpers";
-import { UserProfileRaw, type UserData } from "@/utils/schemas/user";
+import {
+  genId,
+  listenDocWithId,
+  removeObjectfFromArray,
+  upsert,
+} from "@/utils/firestore-helpers";
+// import { UserProfileRaw, type UserData } from "@/utils/schemas/user";
 import { arrayUnion, Timestamp } from "@react-native-firebase/firestore";
 
-import { UserUpdates } from "./types/user.types";
+import { UserDoc, UserUpdates } from "./types/user.types";
 
 const userPath = (uid: string) => `user/${uid}`;
 
 export const listenUserById = (
   uid: string,
-  cb: (u: UserData | null) => void
+  cb: (u: UserDoc | null) => void
 ) => {
   return listenDocWithId<Record<string, unknown>>(
     userPath(uid),
     (res) => {
       if (!res) return cb(null);
-      const parsed = UserProfileRaw.safeParse(res.data);
-      cb(parsed.success ? { docId: res.id, ...parsed.data } : null);
+      const userDoc = {
+        docId: res.id,
+        ...(res.data as UserDoc),
+      };
+
+      cb(userDoc);
     },
     (err) => console.warn("listenUserById error:", err) // permission issues show here
   );
@@ -36,7 +45,7 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
   if (!updates) throw new Error("No Valid Updates");
   // adding a goal
   if (updates.goal) {
-    const goalId = updates.goal.id ?? genId();
+    const goalId = updates.goal.goalId ?? genId();
     const goal = {
       goalId,
       name: updates.goal.name,
@@ -51,7 +60,8 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
   }
   // adding a prohibited ingredient
   if (updates.prohibitedIngredient) {
-    const prohibitedIngredientId = updates.prohibitedIngredient.id ?? genId();
+    const prohibitedIngredientId =
+      updates.prohibitedIngredient.ingredientId ?? genId();
     const ingredient = {
       prohibitedIngredientId,
       name: updates.prohibitedIngredient.name,
@@ -84,4 +94,22 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
   await upsert(userPath(uid), infoUpdate);
 
   return;
+};
+
+export const deleteGoal = async (
+  uid: string,
+  arrayName: string,
+  objectIdFieldName: string,
+  objectId: string
+) => {
+  try {
+    await removeObjectfFromArray(
+      userPath(uid),
+      arrayName,
+      objectIdFieldName,
+      objectId
+    );
+  } catch (error) {
+    console.log("error: " + error);
+  }
 };
