@@ -2,7 +2,6 @@
   "name": "smarthealth-sp",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  
   "engines": {
     "node": "22.18.x",
     "npm": ">=10.9.3"
@@ -17,6 +16,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@react-native-community/datetimepicker": "8.4.1",
     "@react-native-firebase/app": "^22.4.0",
     "@react-native-firebase/auth": "^22.4.0",
     "@react-native-firebase/firestore": "^22.4.0",
@@ -48,8 +48,7 @@
     "react-native-screens": "~4.11.1",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "zod": "^4.0.17",
-    "@react-native-community/datetimepicker": "8.4.1"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
