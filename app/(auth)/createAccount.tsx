@@ -58,8 +58,6 @@ export default function CreateAccount() {
     setError(null);
     try {
       await accountSignUp(e, password);
-      // Your repo has app/(main)/home.tsx
-      //router.replace("/(main)/home");
     } catch (e: any) {
       setError(e?.message ?? "Sign up failed. Please try again.");
     } finally {
