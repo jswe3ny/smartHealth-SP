@@ -70,7 +70,6 @@ export default function CreateAccount() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.innerContainer}>
           <Header title="Create Account" subtitle="Join SmartHealth today" />
-          <Text style={styles.title}>Create Account</Text>
 
           {error ? (
             <View style={styles.errorBox} accessibilityRole="alert">
