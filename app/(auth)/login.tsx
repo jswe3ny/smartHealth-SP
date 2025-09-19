@@ -47,9 +47,6 @@ const AuthForm = () => {
     setError(null);
     try {
       await accountSignIn(e, p);
-      // If your auth context routes on success, cool.
-      // If not, you can push manually:
-      // router.replace("/(main)/home");
     } catch (err: any) {
       const msg =
         err?.message ??
