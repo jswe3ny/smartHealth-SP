@@ -1,16 +1,90 @@
 import {
   collection,
   doc,
+  FirebaseFirestoreTypes,
+  limit,
   onSnapshot,
+  orderBy,
+  query,
   runTransaction,
   setDoc,
+  startAfter,
+  where,
 } from "@react-native-firebase/firestore";
 import { db } from "./firebase";
 
 export type DocWithId<T> = { id: string; data: T };
 
-const dbRef = (path: string) => doc(db, path);
+const docRef = (path: string) => doc(db, path);
+const collectionRef = (path: string) => collection(db, path);
+
 export const genId = () => doc(collection(db, "_")).id;
+
+// --- Supporting interfaces for creating dynamic queries ---
+export interface WhereClause {
+  field: string;
+  op: FirebaseFirestoreTypes.WhereFilterOp;
+  value: unknown;
+}
+
+export interface OrderByClause {
+  field: string;
+  dir?: "asc" | "desc";
+}
+
+export interface QueryOptions {
+  where?: WhereClause[];
+  orderBy?: OrderByClause[];
+  limit?: number;
+  startAfter?: unknown; // doc snapshot or field value such as timestamp
+}
+
+export const listenCollection = <T>(
+  path: "string",
+  options: QueryOptions,
+  onNext: (val: DocWithId<T>[]) => void,
+  onError?: (err: unknown) => void
+) => {
+  const constraints: any[] = [];
+
+  if (options.where) {
+    options.where.forEach((w) =>
+      constraints.push(where(w.field, w.op, w.value))
+    );
+  }
+  if (options.orderBy) {
+    options.orderBy.forEach((o) => constraints.push(orderBy(o.field, o.dir)));
+  }
+  if (options.limit) {
+    constraints.push(limit(options.limit));
+  }
+  if (options.startAfter) {
+    constraints.push(startAfter(options.startAfter));
+  }
+
+  // The `query()` function is designed to accept this array of constraints.
+  const finalQuery = query(collectionRef, ...constraints);
+
+  // listens to the query for new docs.
+  const unsubscribe = onSnapshot(
+    finalQuery,
+    (querySnapshot) => {
+      const documents = querySnapshot.docs.map(
+        (doc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+          id: doc.id,
+          data: doc.data() as T,
+        })
+      );
+      onNext(documents);
+    },
+    (error) => {
+      console.error(`Error listening to collection at path: ${path}`, error);
+      onError?.(error);
+    }
+  );
+
+  return unsubscribe;
+};
 
 export const listenDocWithId = <T>(
   path: string,
@@ -18,7 +92,7 @@ export const listenDocWithId = <T>(
   onError?: (err: unknown) => void
 ) => {
   return onSnapshot(
-    dbRef(path),
+    docRef(path),
     (snap) =>
       onNext(snap.exists() ? { id: snap.id, data: snap.data() as T } : null),
     (err) => onError?.(err)
@@ -26,10 +100,9 @@ export const listenDocWithId = <T>(
 };
 
 export const upsert = <T extends object>(path: string, data: Partial<T>) => {
-  return setDoc(dbRef(path), data as any, { merge: true });
+  return setDoc(docRef(path), data as any, { merge: true });
 };
 
-//Todo add delete helper
 export const removeObjectfFromArray = async (
   path: string,
   arrayName: string,
@@ -38,7 +111,7 @@ export const removeObjectfFromArray = async (
 ) => {
   try {
     await runTransaction(db, async (removeObjectTransaction) => {
-      const docSnapshot = await removeObjectTransaction.get(dbRef(path));
+      const docSnapshot = await removeObjectTransaction.get(docRef(path));
 
       if (!docSnapshot) {
         throw "Document Not Found";
@@ -52,7 +125,7 @@ export const removeObjectfFromArray = async (
         (item: { [objectKey: string]: unknown }) =>
           item && item[objectIdFieldName] !== objectId
       );
-      removeObjectTransaction.update(dbRef(path), {
+      removeObjectTransaction.update(docRef(path), {
         [arrayName]: newArray,
       });
     });
