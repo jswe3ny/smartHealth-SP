@@ -1,6 +1,8 @@
 import { ProductData } from "./types/foodJournal.types";
 
-const BASE_URL = "https://world.openfoodfacts.org/api/v2";
+const BASE_URL = 
+  process.env.EXPO_PUBLIC_OFF_API_URL || 
+  "https://world.openfoodfacts.net/api/v2";
 
 export const fetchProductByBarcode = async (
   barcode: string

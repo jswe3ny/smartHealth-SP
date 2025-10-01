@@ -10,9 +10,10 @@ import {
 } from "react-native";
 
 import { colors } from "@/assets/styles";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { Button } from "@/components/button";
 import { addMeal } from "@/utils/foodjournal.repo";
-import { FoodItem } from "@/utils/types/foodJournal.types";
+import { FoodItem, ProductData } from "@/utils/types/foodJournal.types";
 
 export type NewFoodItem = Omit<FoodItem, "foodItemId">;
 
@@ -33,12 +34,26 @@ export default function FoodJournal() {
     fat: null,
   });
   const [foodItemCount, setFoodItemCount] = useState(0);
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleInputChange = (field: keyof FoodItem, value: string) => {
     setCurrentFoodItem((prevItem) => ({
       ...prevItem,
       [field]: value,
     }));
+  };
+
+  const handleProductScanned = (product: ProductData) => {
+    // Autofill the form with scanned product data
+    setCurrentFoodItem({
+      tempClientId: undefined,
+      foodName: product.productName,
+      calories: product.calories,
+      protein: product.protein,
+      carbs: product.carbs,
+      fat: product.fat,
+      sugar: product.sugar,
+    });
   };
 
   const handleAddItem = () => {
@@ -63,6 +78,7 @@ export default function FoodJournal() {
       protein: undefined,
       carbs: undefined,
       fat: undefined,
+      sugar: undefined,
     });
 
     // // 3. Increment the item counter for the UI (e.g., "Food Item #2")
@@ -142,6 +158,24 @@ export default function FoodJournal() {
             >
               Food Item {foodItemCount + 1}
             </Text>
+
+            {/* Scan Barcode Button */}
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderRadius: 5,
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+              onPress={() => setShowScanner(true)}
+            >
+              <Text style={{ color: "white", fontWeight: "bold" }}>
+                 Scan Barcode
+              </Text>
+            </TouchableOpacity>
+
             <TextInput
               style={{
                 borderWidth: 1,
@@ -310,6 +344,13 @@ export default function FoodJournal() {
             </View>
           </View>
         ))}
+        {/* Barcode Scanner Modal */}
+      <BarcodeScanner
+        visible={showScanner}
+        onClose={() => setShowScanner(false)}
+        onProductScanned={handleProductScanned}
+        prohibitedIngredients={userData.profile?.prohibitedIngredients || []}
+      />
     </ScrollView>
   );
 }
