@@ -33,6 +33,15 @@ export default function Home() {
       />
 
       <Button
+        title="Scan Barcode"
+        onPress={() => {
+          router.push("./barcodeScanner");
+        }}
+        size="lg"
+        bg="#505050ff"
+      />
+
+      <Button
         title="Sign Out"
         onPress={accountSignOut}
         size="lg"
