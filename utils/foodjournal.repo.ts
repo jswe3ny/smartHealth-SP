@@ -7,6 +7,17 @@ import {
 import { db } from "./firebase";
 import { FoodItem } from "./types/foodJournal.types";
 
+const parseNumericString = (value: any): number | null => {
+  // Handle empty, null, or undefined values first.
+  if (value == null || value === "") {
+    return null;
+  }
+
+  // convert the value to a number.
+  const numericValue = parseFloat(value);
+  return isNaN(numericValue) ? null : numericValue;
+};
+
 export const addMeal = async (
   mealName: string,
   MealType: string,
@@ -27,34 +38,19 @@ export const addMeal = async (
   // Ensures each foodname has is a valid string
   // Create a new, sanitized array to pass to the batch.
   const validatedFoodItems = foodItems.map((item) => {
+    // 1. Validate the required fields first. If this fails, the whole map stops.
     if (!item.foodName || item.foodName.trim() === "") {
       throw new Error("All food items must have a valid name.");
     }
 
-    // Create a copy of the item to modify
-    const validatedItem: Omit<FoodItem, "foodItemId"> = {
+    return {
       foodName: item.foodName.trim(),
+      calories: parseNumericString(item.calories),
+      protein: parseNumericString(item.protein),
+      carbs: parseNumericString(item.carbs),
+      fat: parseNumericString(item.fat),
+      sugar: parseNumericString(item.sugar),
     };
-
-    // Check if each nutrition metric in FoodItem is valid number
-
-    if (typeof item.calories === "number" && !isNaN(item.calories)) {
-      validatedItem.calories = item.calories;
-    }
-    if (typeof item.protein === "number" && !isNaN(item.protein)) {
-      validatedItem.protein = item.protein;
-    }
-    if (typeof item.carbs === "number" && !isNaN(item.carbs)) {
-      validatedItem.carbs = item.carbs;
-    }
-    if (typeof item.fat === "number" && !isNaN(item.fat)) {
-      validatedItem.fat = item.fat;
-    }
-    if (typeof item.sugar === "number" && !isNaN(item.sugar)) {
-      validatedItem.sugar = item.sugar;
-    }
-
-    return validatedItem;
   });
 
   try {
@@ -66,8 +62,6 @@ export const addMeal = async (
     };
 
     const mealRef = doc(collection(db, "meal"));
-
-    // 3. Add the "set" operation for the main meal document to the batch.
 
     batch.set(mealRef, {
       ...mealInfo,
@@ -86,6 +80,7 @@ export const addMeal = async (
         foodItemId: foodItemRef.id, // Store the item's own unique ID
       });
     });
+    console.log(validatedFoodItems);
     // Either everything will be saved or nothing will
     await batch.commit();
 
