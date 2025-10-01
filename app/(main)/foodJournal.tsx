@@ -2,11 +2,12 @@ import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
 import React, { useState } from "react";
 import {
+  Alert,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 import { colors } from "@/assets/styles";
@@ -43,8 +44,14 @@ export default function FoodJournal() {
     }));
   };
 
-  const handleProductScanned = (product: ProductData) => {
-    // Autofill the form with scanned product data
+  const checkForProhibitedIngredients = (ingredients: string[]) => {
+    const prohibited = userData.profile?.prohibitedIngredients || [];
+    return prohibited.filter((p) =>
+      ingredients.some((ing) => ing.toLowerCase().includes(p.name.toLowerCase()))
+    );
+  };
+
+  const autofillForm = (product: ProductData) => {
     setCurrentFoodItem({
       tempClientId: undefined,
       foodName: product.productName,
@@ -54,6 +61,55 @@ export default function FoodJournal() {
       fat: product.fat,
       sugar: product.sugar,
     });
+  };
+
+  // Handles allergy checking and shows appropriate alerts
+  const handleProductScanned = (product: ProductData) => {
+    setShowScanner(false);
+    const foundProhibited = checkForProhibitedIngredients(product.ingredients);
+
+    // If allergens found, show warning with confirmation
+    if (foundProhibited.length > 0) {
+      const prohibitedNames = foundProhibited.map((p) => p.name).join(", ");
+      Alert.alert(
+        "Allergy Alert",
+        `This product contains: ${prohibitedNames}\n\nYou have marked these as prohibited ingredients.`,
+        [
+          {
+            text: "Close",
+            onPress: () => setShowScanner(false),
+          },
+          {
+            text: "Add Anyway",
+            style: "destructive",
+            onPress: () => {
+              // Show second confirmation alert
+              Alert.alert(
+                "Are you sure?",
+                "This product contains ingredients you've marked as prohibited. Add to meal anyway?",
+                [
+                  { text: "Cancel" },
+                  {
+                    text: "Yes, Add",
+                    onPress: () => autofillForm(product),
+                  },
+                ]
+              );
+            },
+          },
+        ]
+      );
+    } else {
+      // No allergens, show safe message
+      Alert.alert(
+        "No Allergens Detected",
+        `${product.productName}\n\nNo prohibited ingredients detected.`,
+        [
+          { text: "Close", onPress: () => setShowScanner(false) },
+          { text: "Add to Meal", onPress: () => autofillForm(product) },
+        ]
+      );
+    }
   };
 
   const handleAddItem = () => {
@@ -349,7 +405,6 @@ export default function FoodJournal() {
         visible={showScanner}
         onClose={() => setShowScanner(false)}
         onProductScanned={handleProductScanned}
-        prohibitedIngredients={userData.profile?.prohibitedIngredients || []}
       />
     </ScrollView>
   );

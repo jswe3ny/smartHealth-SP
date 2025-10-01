@@ -10,8 +10,55 @@ export default function BarcodeScannerPage() {
   const userData = useUserInfo();
   const [showScanner, setShowScanner] = useState(true);
 
+  const checkForProhibitedIngredients = (ingredients: string[]) => {
+    const prohibited = userData.profile?.prohibitedIngredients || [];
+    return prohibited.filter((p) =>
+      ingredients.some((ing) =>
+        ing.toLowerCase().includes(p.name.toLowerCase())
+      )
+    );
+  };
+
   const handleProductScanned = (product: ProductData) => {
-    // Display product info in an alert
+    setShowScanner(false);
+
+    const foundProhibited = checkForProhibitedIngredients(product.ingredients);
+
+    if (foundProhibited.length > 0) {
+      const prohibitedNames = foundProhibited.map((p) => p.name).join(", ");
+      Alert.alert(
+        "Allergy Alert",
+        `This product contains: ${prohibitedNames}\n\nYou have marked these as prohibited ingredients.`,
+        [
+          {
+            text: "Close",
+            onPress: () => router.back(),
+          },
+          {
+            text: "See Nutrition Info",
+            onPress: () => showNutritionInfo(product),
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        "No Allergens Detected",
+        `${product.productName}\n\nNo prohibited ingredients detected.`,
+        [
+          {
+            text: "Close",
+            onPress: () => router.back(),
+          },
+          {
+            text: "See Nutrition Info",
+            onPress: () => showNutritionInfo(product),
+          },
+        ]
+      );
+    }
+  };
+
+  const showNutritionInfo = (product: ProductData) => {
     const nutritionInfo = `
 Product: ${product.productName}
 
@@ -44,7 +91,6 @@ ${product.ingredients.length > 0 ? `\nIngredients:\n${product.ingredients.join("
         visible={showScanner}
         onClose={() => router.back()}
         onProductScanned={handleProductScanned}
-        prohibitedIngredients={userData.profile?.prohibitedIngredients || []}
       />
     </View>
   );

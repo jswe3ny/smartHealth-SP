@@ -3,7 +3,7 @@ import { Button } from "@/components/button";
 import { fetchProductByBarcode } from "@/utils/openfoodfacts.repo";
 import { ProductData } from "@/utils/types/foodJournal.types";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,27 +17,23 @@ interface BarcodeScannerProps {
   visible: boolean;
   onClose: () => void;
   onProductScanned: (product: ProductData) => void;
-  prohibitedIngredients?: Array<{ name: string }>;
 }
 
 export function BarcodeScanner({
   visible,
   onClose,
-  onProductScanned,
-  prohibitedIngredients = [],
+  onProductScanned, 
 }: BarcodeScannerProps) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const checkForProhibitedIngredients = (ingredients: string[]) => {
-    const found = prohibitedIngredients.filter((p) =>
-      ingredients.some((ing) =>
-        ing.toLowerCase().includes(p.name.toLowerCase())
-      )
-    );
-    return found;
-  };
+  useEffect(() => {
+    if (visible) {
+      setScanned(false);
+      setLoading(false);
+    }
+  }, [visible]);
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (scanned || loading) return;
@@ -60,78 +56,34 @@ export function BarcodeScanner({
                 setLoading(false);
               },
             },
+            {
+              text: "Cancel",
+              onPress: onClose,
+            },
           ]
         );
         return;
       }
 
-      const foundProhibited = checkForProhibitedIngredients(
-        product.ingredients
-      );
+      onProductScanned(product);
+      setScanned(false);
+      setLoading(false);
 
-      if (foundProhibited.length > 0) {
-        const prohibitedNames = foundProhibited.map((p) => p.name).join(", ");
-        Alert.alert(
-          "Allergy Alert",
-          `This product contains: ${prohibitedNames}\n\nYou have marked these as prohibited ingredients.`,
-          [
-            {
-              text: "Cancel",
-              style: "cancel",
-              onPress: () => {
-                setScanned(false);
-                setLoading(false);
-                onClose();
-              },
-            },
-            {
-              text: "Use Anyway",
-              style: "destructive",
-              onPress: () => {
-                onProductScanned(product);
-                setScanned(false);
-                setLoading(false);
-                onClose();
-              },
-            },
-          ]
-        );
-      } else {
-        Alert.alert(
-          "Product Safe",
-          `${product.productName}\n\nNo prohibited ingredients detected.`,
-          [
-            {
-              text: "Cancel",
-              onPress: () => {
-                setScanned(false);
-                setLoading(false);
-                onClose();
-              },
-            },
-            {
-              text: "Check Nutrition",
-              onPress: () => {
-                onProductScanned(product);
-                setScanned(false);
-                setLoading(false);
-                onClose();
-              },
-            },
-          ]
-        );
-      }
     } catch (error) {
       Alert.alert(
         "Error",
         "Failed to fetch product information. Please try again.",
         [
           {
-            text: "OK",
+            text: "Try Again",
             onPress: () => {
               setScanned(false);
               setLoading(false);
             },
+          },
+          {
+            text: "Cancel",
+            onPress: onClose,
           },
         ]
       );
