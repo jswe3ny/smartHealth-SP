@@ -1,14 +1,21 @@
 import { ProductData } from "./types/foodJournal.types";
 
-const BASE_URL = 
-  process.env.EXPO_PUBLIC_OFF_API_URL || 
+const BASE_URL =
+  process.env.EXPO_PUBLIC_OFF_API_URL ||
   "https://world.openfoodfacts.net/api/v2";
 
 export const fetchProductByBarcode = async (
   barcode: string
 ): Promise<ProductData | null> => {
   try {
-    const response = await fetch(`${BASE_URL}/product/${barcode}.json`);
+    const response = await fetch(`${BASE_URL}/product/${barcode}.json`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+
+        "User-Agent": "smartHealth-SP/1.0 jsweeny@CSSLayerBlockRule.edu",
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
