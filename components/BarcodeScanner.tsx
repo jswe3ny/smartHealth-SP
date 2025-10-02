@@ -54,11 +54,11 @@ export function BarcodeScanner({
       const product = await fetchProductByBarcode(data);
 
       // ==========IMPORTANT: IF TESTING/WORKING ON  API CAlls UNCOMMNET DELAY FUNCTIONS - PROTECTION AGAINST SPAMMING API AND GETTING BANNED ===========
-      function delay(time: number) {
-        return new Promise((resolve) => setTimeout(resolve, time));
-      }
-      await delay(1000);
-      console.log("with ref delaqqq######qy");
+      // function delay(time: number) {
+      //   return new Promise((resolve) => setTimeout(resolve, time));
+      // }
+      // await delay(1000);
+      // console.log("with ref delay");
 
       if (!product) {
         Alert.alert(
