@@ -10,7 +10,10 @@
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
-      "bundleIdentifier": "com.anonymous.smartHealth-SP"
+      "bundleIdentifier": "com.anonymous.smartHealth-SP",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to scan product barcodes."
+      }
     },
     "android": {
       "googleServicesFile": "./google-services.json",
@@ -18,14 +21,14 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": ["CAMERA"]
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
-    "icon": "./assets/images/react-logo@2x.png", // ✅ FIX 1: Add this line (use your icon's path)
-
+    "icon": "./assets/images/react-logo@2x.png", 
     "plugins": [
       "expo-router",
       [
@@ -46,8 +49,15 @@
             "useFrameworks": "static"
           }
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan barcodes."
+        }
       ]
     ],
+    
     "experiments": {
       "typedRoutes": true
     },

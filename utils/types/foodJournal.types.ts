@@ -19,3 +19,21 @@ export interface FoodItem {
   carbs?: Nullable<number>;
   fat?: Nullable<number>;
 }
+
+// New ProductData type for Open Food Facts API
+export interface ProductData {
+  barcode: string;
+  productName: string;
+  calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fat: number | null;
+  sugar: number | null;
+  fiber: number | null;
+  sodium: number | null;
+  saturatedFat: number | null;
+  transFat: number | null;
+  cholesterol: number | null;
+  servingSize: string | null;
+  ingredients: string[];
+}
