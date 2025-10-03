@@ -3,7 +3,7 @@ import { Button } from "@/components/button";
 import { fetchProductByBarcode } from "@/utils/openfoodfacts.repo";
 import { ProductData } from "@/utils/types/foodJournal.types";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,27 +22,43 @@ interface BarcodeScannerProps {
 export function BarcodeScanner({
   visible,
   onClose,
-  onProductScanned, 
+  onProductScanned,
 }: BarcodeScannerProps) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
+  // const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const scanInProgress = useRef(false);
 
   useEffect(() => {
     if (visible) {
-      setScanned(false);
+      // setScanned(false);
       setLoading(false);
+      scanInProgress.current = false;
     }
   }, [visible]);
 
   const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned || loading) return;
+    // if (scanInProgress.current) {
+    //   // only one call can go out at once
+    //   console.log("wait for call to be resolved");
+    // }
 
-    setScanned(true);
+    // IMPORTANT PREVENTS API CALLS FROM SPAMMING
+    if (scanInProgress.current || loading) return;
+    scanInProgress.current = true;
+
     setLoading(true);
 
     try {
       const product = await fetchProductByBarcode(data);
+
+      // ==========IMPORTANT: IF TESTING/WORKING ON  API CAlls UNCOMMNET DELAY FUNCTIONS - PROTECTION AGAINST SPAMMING API AND GETTING BANNED ===========
+      // function delay(time: number) {
+      //   return new Promise((resolve) => setTimeout(resolve, time));
+      // }
+      // await delay(1000);
+      // console.log("with ref delay");
 
       if (!product) {
         Alert.alert(
@@ -52,7 +68,8 @@ export function BarcodeScanner({
             {
               text: "Scan Again",
               onPress: () => {
-                setScanned(false);
+                //
+                scanInProgress.current = false;
                 setLoading(false);
               },
             },
@@ -66,9 +83,6 @@ export function BarcodeScanner({
       }
 
       onProductScanned(product);
-      setScanned(false);
-      setLoading(false);
-
     } catch (error) {
       Alert.alert(
         "Error",
@@ -77,7 +91,7 @@ export function BarcodeScanner({
           {
             text: "Try Again",
             onPress: () => {
-              setScanned(false);
+              scanInProgress.current = false;
               setLoading(false);
             },
           },
@@ -91,7 +105,7 @@ export function BarcodeScanner({
   };
 
   const handleClose = () => {
-    setScanned(false);
+    scanInProgress.current = false;
     setLoading(false);
     onClose();
   };
@@ -102,7 +116,11 @@ export function BarcodeScanner({
 
   if (!permission.granted) {
     return (
-      <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        onRequestClose={handleClose}
+      >
         <View style={styles.container}>
           <Text>We need camera permission to scan barcodes</Text>
           <Button
@@ -126,7 +144,6 @@ export function BarcodeScanner({
     <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
       <View style={styles.container}>
         <Text>Scan Barcode</Text>
-        
         <CameraView
           style={styles.camera}
           facing="back"
@@ -140,7 +157,7 @@ export function BarcodeScanner({
               "code39",
             ],
           }}
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+          onBarcodeScanned={handleBarCodeScanned}
         />
 
         {loading && <ActivityIndicator size="large" />}
@@ -161,8 +178,12 @@ export function BarcodeScanner({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginVertical: 70,
+    marginHorizontal: 10,
   },
   camera: {
     flex: 1,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
 });

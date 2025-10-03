@@ -7,7 +7,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import { colors } from "@/assets/styles";
@@ -47,7 +47,9 @@ export default function FoodJournal() {
   const checkForProhibitedIngredients = (ingredients: string[]) => {
     const prohibited = userData.profile?.prohibitedIngredients || [];
     return prohibited.filter((p) =>
-      ingredients.some((ing) => ing.toLowerCase().includes(p.name.toLowerCase()))
+      ingredients.some((ing) =>
+        ing.toLowerCase().includes(p.name.toLowerCase())
+      )
     );
   };
 
@@ -182,7 +184,7 @@ export default function FoodJournal() {
           style={{ backgroundColor: "white", padding: 15, borderRadius: 8 }}
         >
           <Text>Meal Entry Form</Text>
-
+          <Text style={{ fontWeight: "bold" }}>Meal Name </Text>
           <TextInput
             style={{
               borderWidth: 1,
@@ -195,6 +197,7 @@ export default function FoodJournal() {
             value={mealName}
             onChangeText={setMealName}
           />
+          <Text style={{ fontWeight: "bold" }}>Meal Type </Text>
           <TextInput
             style={{
               borderWidth: 1,
@@ -228,10 +231,11 @@ export default function FoodJournal() {
               onPress={() => setShowScanner(true)}
             >
               <Text style={{ color: "white", fontWeight: "bold" }}>
-                 Scan Barcode
+                Scan Barcode
               </Text>
             </TouchableOpacity>
 
+            <Text style={{ fontWeight: "bold" }}>Food Name </Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -244,6 +248,7 @@ export default function FoodJournal() {
               value={currentFoodItem.foodName.toString()}
               onChangeText={(text) => handleInputChange("foodName", text)}
             />
+            <Text style={{ fontWeight: "bold" }}>Calories: </Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -257,6 +262,7 @@ export default function FoodJournal() {
               value={currentFoodItem.calories?.toString()}
               onChangeText={(text) => handleInputChange("calories", text)}
             />
+            <Text style={{ fontWeight: "bold" }}>Sugar: (g) </Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -270,6 +276,7 @@ export default function FoodJournal() {
               value={currentFoodItem.sugar?.toString()}
               onChangeText={(text) => handleInputChange("sugar", text)}
             />
+            <Text style={{ fontWeight: "bold" }}> Carbs: (mg) </Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -283,6 +290,7 @@ export default function FoodJournal() {
               value={currentFoodItem.carbs?.toString()}
               onChangeText={(text) => handleInputChange("carbs", text)}
             />
+            <Text style={{ fontWeight: "bold" }}>Fat: (g) </Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -296,6 +304,7 @@ export default function FoodJournal() {
               value={currentFoodItem.fat?.toString()}
               onChangeText={(text) => handleInputChange("fat", text)}
             />
+            <Text style={{ fontWeight: "bold" }}>Protein: (g)</Text>
             <TextInput
               style={{
                 borderWidth: 1,
@@ -334,13 +343,6 @@ export default function FoodJournal() {
           />
         </View>
       </View>
-      {/* 
-      <Button
-        title="Sign Out"
-        onPress={accountSignOut}
-        size="lg"
-        bg="#000000"
-      /> */}
 
       {foodItems &&
         foodItems.map((item) => (
@@ -400,7 +402,8 @@ export default function FoodJournal() {
             </View>
           </View>
         ))}
-        {/* Barcode Scanner Modal */}
+      {/* Barcode Scanner Modal */}
+
       <BarcodeScanner
         visible={showScanner}
         onClose={() => setShowScanner(false)}
