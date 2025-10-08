@@ -15,6 +15,7 @@ export default function AppLayout() {
     <SafeAreaView style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: true }}>
         <Stack.Screen name="home" />
+        <Stack.Screen name="foodJournal" />
       </Stack>
     </SafeAreaView>
   );
