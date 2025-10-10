@@ -5,7 +5,8 @@ import {
   writeBatch,
 } from "@react-native-firebase/firestore";
 import { db } from "./firebase";
-import { FoodItem } from "./types/foodJournal.types";
+import { getCollection, getDocWithId, QueryOptions } from "./firestore-helpers";
+import { FoodItem, MealInsertType } from "./types/foodJournal.types";
 
 const parseNumericString = (value: any): number | null => {
   // Handle empty, null, or undefined values first.
@@ -18,6 +19,7 @@ const parseNumericString = (value: any): number | null => {
   return isNaN(numericValue) ? null : numericValue;
 };
 
+// BAD PRACTICE NEED TO MOVE FIRESTORE BATCH WRTIE TO FIRESTORE HELPERS !!!!
 export const addMeal = async (
   mealName: string,
   MealType: string,
@@ -80,15 +82,80 @@ export const addMeal = async (
         foodItemId: foodItemRef.id, // Store the item's own unique ID
       });
     });
-    console.log(validatedFoodItems);
-    // Either everything will be saved or nothing will
     await batch.commit();
 
     return mealRef.id;
   } catch (error) {
-    // If anything fails during the process, log the error and re-throw it
-    // so the UI can handle it (e.g., show an error message to the user).
     console.error("Error adding meal with items:", error);
     throw new Error("Failed to save meal. Please try again.");
+  }
+};
+
+export interface MealSummary {
+  id: string;
+  mealName?: string;
+}
+export const getRecentMealSummaries = async (
+  uid: string
+): Promise<MealSummary[]> => {
+  try {
+    // 1. Define the "recipe" for your query.
+    //    Use QueryOptions directly, not db.QueryOptions
+    const options: QueryOptions = {
+      where: [{ field: "uid", op: "==", value: uid }],
+      orderBy: [{ field: "mealTime", dir: "desc" }],
+      limit: 20,
+    };
+
+    // 2. Call the helper function directly, without the "db." prefix.
+    const fullMeals = await getCollection<MealInsertType>("meal", options); // FIX: Changed "meal" to "meals"
+
+    // 3. Transform the full data into the simple shape your UI needs.
+    const summaries: MealSummary[] = fullMeals.map((doc) => ({
+      id: doc.id,
+      mealName: doc.data.mealName,
+    }));
+
+    return summaries;
+  } catch (error) {
+    console.error("Error fetching recent meals:", error);
+    return [];
+  }
+};
+export interface MealDetails extends MealInsertType {
+  foodItems: FoodItem[];
+}
+export const getMealDetailsById = async (
+  mealId: string
+): Promise<MealDetails | null> => {
+  try {
+    // 1. Construct the path to the parent meal document.
+    const mealPath = `meal/${mealId}`;
+
+    // 2. Fetch the main meal document using your new helper.
+    const mealDoc = await getDocWithId<MealInsertType>(mealPath);
+    if (!mealDoc) {
+      // If the main meal doesn't exist, we can't get its items.
+      console.warn(`Meal with ID ${mealId} not found.`);
+      return null;
+    }
+
+    // 3. Construct the path to the foodItems subcollection.
+    const foodItemsPath = `meal/${mealId}/foodItems`;
+
+    // 4. Fetch all the food items from the subcollection using your existing helper.
+    const foodItemDocs = await getCollection<FoodItem>(foodItemsPath, {});
+
+    // 5. Combine the results into a single, clean object.
+    const mealDetails: MealDetails = {
+      ...mealDoc.data, // The data from the parent meal (name, type, time)
+      mealId: mealDoc.id,
+      foodItems: foodItemDocs.map((doc) => doc.data), // The array of food items
+    };
+    console.log("meal data: ", mealDetails);
+    return mealDetails;
+  } catch (error) {
+    console.error(`Error fetching details for meal ${mealId}:`, error);
+    throw error; // Re-throw the error for the UI to handle
   }
 };

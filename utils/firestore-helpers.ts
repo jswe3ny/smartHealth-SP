@@ -2,6 +2,8 @@ import {
   collection,
   doc,
   FirebaseFirestoreTypes,
+  getDoc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -38,7 +40,7 @@ export interface QueryOptions {
   limit?: number;
   startAfter?: unknown; // doc snapshot or field value such as timestamp
 }
-
+// For REALTIME Udates
 export const listenCollection = <T>(
   path: "string",
   options: QueryOptions,
@@ -98,6 +100,57 @@ export const listenDocWithId = <T>(
     (err) => onError?.(err)
   );
 };
+
+// FoR Reglar queries
+export const getCollection = async <T>(
+  path: string,
+  options: QueryOptions
+): Promise<DocWithId<T>[]> => {
+  const getCollectionRef = collectionRef(path);
+  const constraints: any[] = []; // Using any[] to handle the library's type inconsistencies
+
+  // This logic is identical to your listenCollection, which is good!
+  if (options.where) {
+    options.where.forEach((w) =>
+      constraints.push(where(w.field, w.op, w.value))
+    );
+  }
+  if (options.orderBy) {
+    options.orderBy.forEach((o) => constraints.push(orderBy(o.field, o.dir)));
+  }
+  if (options.limit) {
+    constraints.push(limit(options.limit));
+  }
+  // ...and so on for other options...
+
+  const q = query(getCollectionRef, ...constraints);
+
+  // The key difference: use `getDocs` for a one-time fetch.
+  const snapshot = await getDocs(q);
+
+  // Map the results into your standard format.
+  return snapshot.docs.map((doc: any) => ({
+    id: doc.id,
+    data: doc.data() as T,
+  }));
+};
+
+export const getDocWithId = async <T>(
+  path: string
+): Promise<DocWithId<T> | null> => {
+  const snapshot = await getDoc(docRef(path));
+
+  if (!snapshot.exists()) {
+    // It's good practice to return null if the document isn't found.
+    return null;
+  }
+
+  return {
+    id: snapshot.id,
+    data: snapshot.data() as T,
+  };
+};
+// export const getDocWithId = async <T>(path:sting): Promise<
 
 export const upsert = <T extends object>(path: string, data: Partial<T>) => {
   return setDoc(docRef(path), data as any, { merge: true });
