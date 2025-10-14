@@ -55,6 +55,11 @@
     <string>Allow $(PRODUCT_NAME) to access your camera to scan barcodes.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <!-- HealthKit permissions -->
+    <key>NSHealthShareUsageDescription</key>
+    <string>We need access to read your health data to track your fitness progress and wellness goals.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>We need access to update your health data in the Health app.</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
@@ -64,6 +69,7 @@
     <key>UIRequiredDeviceCapabilities</key>
     <array>
       <string>arm64</string>
+      <string>healthkit</string>
     </array>
     <key>UIRequiresFullScreen</key>
     <false/>

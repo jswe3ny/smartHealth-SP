@@ -22,13 +22,15 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
-    "icon": "./assets/images/react-logo@2x.png", 
+    "icon": "./assets/images/react-logo@2x.png",
     "plugins": [
       "expo-router",
       [
@@ -55,9 +57,20 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan barcodes."
         }
+      ],
+      [
+        "react-native-health-connect",
+        {
+          "permissions": [
+            "READ_STEPS",
+            "READ_DISTANCE",
+            "READ_TOTAL_CALORIES_BURNED",
+            "READ_ACTIVE_CALORIES_BURNED",
+            "READ_WEIGHT"
+          ]
+        }
       ]
     ],
-    
     "experiments": {
       "typedRoutes": true
     },
