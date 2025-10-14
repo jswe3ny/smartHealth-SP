@@ -37,3 +37,12 @@ export interface ProductData {
   servingSize: string | null;
   ingredients: string[];
 }
+
+export interface MealSummary {
+  id: string;
+  mealName?: string;
+}
+
+export interface MealDetails extends MealInsertType {
+  foodItems: FoodItem[];
+}

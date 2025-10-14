@@ -15,12 +15,12 @@ import {
 import { colors } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { Button } from "@/components/button";
+import { addMeal, getRecentMealSummaries } from "@/utils/foodjournal.repo";
 import {
-  addMeal,
-  getRecentMealSummaries,
+  FoodItem,
   MealSummary,
-} from "@/utils/foodjournal.repo";
-import { FoodItem, ProductData } from "@/utils/types/foodJournal.types";
+  ProductData,
+} from "@/utils/types/foodJournal.types";
 import { Link } from "expo-router";
 
 export type NewFoodItem = Omit<FoodItem, "foodItemId">;
@@ -49,8 +49,20 @@ export default function FoodJournal() {
   const [mealSummary, setMealSummary] = useState<MealSummary[]>([]);
 
   useEffect(() => {
-    getMealSummary();
-  }, []);
+    // getMealSummary();
+    if (!currentUser?.uid) return;
+
+    const unsubscribe = getRecentMealSummaries(
+      currentUser.uid,
+      (updatedMeals) => {
+        setMealSummary(updatedMeals);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser]);
 
   const handleInputChange = (field: keyof FoodItem, value: string) => {
     setCurrentFoodItem((prevItem) => ({
@@ -190,11 +202,10 @@ export default function FoodJournal() {
       console.log("error: ", error);
     }
   };
-  const getMealSummary = async () => {
-    let meals = await getRecentMealSummaries(currentUser.uid);
-    setMealSummary(meals);
-    console.log("clieant: ", mealSummary);
-  };
+  // const getMealSummary = async () => {
+  //   let meals = await getRecentMealSummaries(currentUser.uid);
+  //   setMealSummary(meals);
+  // };
 
   return (
     <ScrollView>

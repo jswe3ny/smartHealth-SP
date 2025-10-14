@@ -5,8 +5,19 @@ import {
   writeBatch,
 } from "@react-native-firebase/firestore";
 import { db } from "./firebase";
-import { getCollection, getDocWithId, QueryOptions } from "./firestore-helpers";
-import { FoodItem, MealInsertType } from "./types/foodJournal.types";
+import {
+  deleteDocAndSubcollection,
+  getCollection,
+  getDocWithId,
+  listenCollection,
+  QueryOptions,
+} from "./firestore-helpers";
+import {
+  FoodItem,
+  MealDetails,
+  MealInsertType,
+  MealSummary,
+} from "./types/foodJournal.types";
 
 const parseNumericString = (value: any): number | null => {
   // Handle empty, null, or undefined values first.
@@ -91,71 +102,77 @@ export const addMeal = async (
   }
 };
 
-export interface MealSummary {
-  id: string;
-  mealName?: string;
-}
-export const getRecentMealSummaries = async (
-  uid: string
-): Promise<MealSummary[]> => {
+// Realtime listner now
+export const getRecentMealSummaries = (
+  uid: string,
+  onUpdate: (meals: MealSummary[]) => void
+) => {
   try {
-    // 1. Define the "recipe" for your query.
-    //    Use QueryOptions directly, not db.QueryOptions
     const options: QueryOptions = {
       where: [{ field: "uid", op: "==", value: uid }],
       orderBy: [{ field: "mealTime", dir: "desc" }],
       limit: 20,
     };
 
-    // 2. Call the helper function directly, without the "db." prefix.
-    const fullMeals = await getCollection<MealInsertType>("meal", options); // FIX: Changed "meal" to "meals"
+    const unsubscribe = listenCollection<MealInsertType>(
+      "meal",
+      options,
+      (fullMeals) => {
+        const summaries: MealSummary[] = fullMeals.map((doc) => ({
+          id: doc.id,
+          mealName: doc.data.mealName,
+        }));
 
-    // 3. Transform the full data into the simple shape your UI needs.
-    const summaries: MealSummary[] = fullMeals.map((doc) => ({
-      id: doc.id,
-      mealName: doc.data.mealName,
-    }));
+        onUpdate(summaries);
+      }
+    );
 
-    return summaries;
+    // 5. Return the unsubscribe function so your component can clean up the listener later.
+    return unsubscribe;
   } catch (error) {
-    console.error("Error fetching recent meals:", error);
-    return [];
+    console.error("Error subscribing to recent meals:", error);
+    // On error, return an empty function to prevent crashes.
+    return () => {};
   }
 };
-export interface MealDetails extends MealInsertType {
-  foodItems: FoodItem[];
-}
+
 export const getMealDetailsById = async (
   mealId: string
 ): Promise<MealDetails | null> => {
   try {
-    // 1. Construct the path to the parent meal document.
+    // Construct the path to the parent meal document.
     const mealPath = `meal/${mealId}`;
 
-    // 2. Fetch the main meal document using your new helper.
+    // Fetch the main meal document using your new helper.
     const mealDoc = await getDocWithId<MealInsertType>(mealPath);
     if (!mealDoc) {
       // If the main meal doesn't exist, we can't get its items.
       console.warn(`Meal with ID ${mealId} not found.`);
       return null;
     }
-
-    // 3. Construct the path to the foodItems subcollection.
     const foodItemsPath = `meal/${mealId}/foodItems`;
 
-    // 4. Fetch all the food items from the subcollection using your existing helper.
+    // Fetch all the food items from the subcollection
     const foodItemDocs = await getCollection<FoodItem>(foodItemsPath, {});
 
-    // 5. Combine the results into a single, clean object.
     const mealDetails: MealDetails = {
       ...mealDoc.data, // The data from the parent meal (name, type, time)
       mealId: mealDoc.id,
       foodItems: foodItemDocs.map((doc) => doc.data), // The array of food items
     };
-    console.log("meal data: ", mealDetails);
     return mealDetails;
   } catch (error) {
     console.error(`Error fetching details for meal ${mealId}:`, error);
     throw error; // Re-throw the error for the UI to handle
+  }
+};
+
+export const deleteMealByID = async (mealId: string) => {
+  try {
+    await deleteDocAndSubcollection("meal", mealId, "foodItems");
+  } catch (err) {
+    console.error(`Error deleting meal ${mealId}:`, err);
+    // Re-throw the error so the UI can handle it (e.g., show an error message).
+    throw new Error("Failed to delete meal.");
   }
 };

@@ -12,6 +12,7 @@ import {
   setDoc,
   startAfter,
   where,
+  writeBatch,
 } from "@react-native-firebase/firestore";
 import { db } from "./firebase";
 
@@ -42,13 +43,14 @@ export interface QueryOptions {
 }
 // For REALTIME Udates
 export const listenCollection = <T>(
-  path: "string",
+  path: string,
   options: QueryOptions,
   onNext: (val: DocWithId<T>[]) => void,
   onError?: (err: unknown) => void
 ) => {
   const constraints: any[] = [];
 
+  // query option builder
   if (options.where) {
     options.where.forEach((w) =>
       constraints.push(where(w.field, w.op, w.value))
@@ -64,8 +66,7 @@ export const listenCollection = <T>(
     constraints.push(startAfter(options.startAfter));
   }
 
-  // The `query()` function is designed to accept this array of constraints.
-  const finalQuery = query(collectionRef, ...constraints);
+  const finalQuery = query(collectionRef(path), ...constraints);
 
   // listens to the query for new docs.
   const unsubscribe = onSnapshot(
@@ -186,4 +187,26 @@ export const removeObjectfFromArray = async (
     console.log("Error: Object Not RemovedL: ", error);
     throw error;
   }
+};
+
+export const deleteDocAndSubcollection = async (
+  collectionPath: string,
+  docId: string,
+  subcollectionName: string
+) => {
+  const subcollectionPath = `${collectionPath}/${docId}/${subcollectionName}`;
+  const subcollectionRef = collection(db, subcollectionPath);
+
+  const snapshot = await getDocs(subcollectionRef);
+
+  const batch = writeBatch(db);
+
+  snapshot.docs.forEach((doc: any) => {
+    batch.delete(doc.ref);
+  });
+
+  const parentDocRef = doc(db, collectionPath, docId);
+  batch.delete(parentDocRef);
+
+  await batch.commit();
 };

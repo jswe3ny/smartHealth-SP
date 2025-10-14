@@ -1,7 +1,10 @@
 // This is the full code for app/meals/[mealId].tsx
 
-import { getMealDetailsById, MealDetails } from "@/utils/foodjournal.repo";
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { colors } from "@/assets/styles";
+import { Button } from "@/components/button";
+import { deleteMealByID, getMealDetailsById } from "@/utils/foodjournal.repo";
+import { MealDetails } from "@/utils/types/foodJournal.types";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -64,6 +67,15 @@ export default function MealDetailScreen() {
       >
         Food Items:
       </Text>
+      <Button
+        style={{ width: 60, marginLeft: "auto" }}
+        title="X"
+        bg={colors.black}
+        onPress={() => {
+          deleteMealByID(mealId);
+          router.back();
+        }}
+      />
       <ScrollView style={{ height: "100%" }}>
         {mealDetails.foodItems.map((item, index) => (
           <View
