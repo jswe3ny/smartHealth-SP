@@ -126,7 +126,7 @@ class HealthService {
     
     return {
       steps: Math.round(baseSteps + variance),
-      distance: Math.round((baseSteps + variance) * 0.7),
+      distance: ((baseSteps + variance) * 0.7) / 1609.34,
       calories: Math.round((baseSteps + variance) * 0.04),
       weight: 165 + Math.random() * 4 - 2,
       activeMinutes: Math.round(30 + Math.random() * 30),

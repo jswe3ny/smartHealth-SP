@@ -142,8 +142,7 @@ export const getActiveHealthGoals = async (
   try {
     const q = query(
       collection(db, `user/${uid}/healthGoals`),
-      where("isActive", "==", true),
-      orderBy("createdAt", "desc")
+      where("isActive", "==", true)
     );
 
     const querySnapshot = await getDocs(q);
