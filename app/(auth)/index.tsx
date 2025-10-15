@@ -26,14 +26,14 @@ export default function LandingScreen() {
       </Pressable> */}
       <Button
         title="Login"
-        onPress={() => router.push("./login")}
+        onPress={() => router.push("./auth")}
         size="lg"
         bg={colors.black}
         fullWidth={true}
       />
       <Button
         title="Create Account"
-        onPress={() => router.push("./createAccount")}
+        onPress={() => router.push("./auth")}
         size="lg"
         bg={colors.primary}
         fullWidth={true}
