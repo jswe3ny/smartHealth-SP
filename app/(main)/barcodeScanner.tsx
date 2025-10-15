@@ -1,10 +1,10 @@
 import {
-    fontSize,
-    fontWeight,
-    neutralColors,
-    radius,
-    spacing,
-    useThemeColors,
+  fontSize,
+  fontWeight,
+  neutralColors,
+  radius,
+  spacing,
+  useThemeColors,
 } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { useUserInfo } from "@/hooks/useUserInfo";
@@ -13,12 +13,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function BarcodeScannerPage() {
@@ -246,7 +246,10 @@ ${
             <Text style={styles.scanButtonText}>Start Scanning</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <Ionicons name="arrow-back" size={20} color={colors.text} />
             <Text style={styles.backButtonText}>Back to Food Journal</Text>
           </TouchableOpacity>
@@ -262,7 +265,7 @@ ${
             <View style={styles.instructionItem}>
               <Ionicons name="checkmark-circle" size={18} color={colors.info} />
               <Text style={styles.instructionText}>
-                We'll check for any prohibited ingredients you've set
+                We&apos;ll check for any prohibited ingredients you&apos;ve set
               </Text>
             </View>
             <View style={styles.instructionItem}>

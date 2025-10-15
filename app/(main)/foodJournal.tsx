@@ -3,23 +3,30 @@ import { useUserInfo } from "@/hooks/useUserInfo";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-import { fontSize, fontWeight, neutralColors, radius, spacing, useThemeColors } from "@/assets/styles";
+import {
+  fontSize,
+  fontWeight,
+  neutralColors,
+  radius,
+  spacing,
+  useThemeColors,
+} from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { addMeal, getRecentMealSummaries } from "@/utils/foodjournal.repo";
 import {
-    FoodItem,
-    MealSummary,
-    ProductData,
+  FoodItem,
+  MealSummary,
+  ProductData,
 } from "@/utils/types/foodJournal.types";
 import { Link } from "expo-router";
 
@@ -438,7 +445,11 @@ export default function FoodJournal() {
           style={styles.addButton}
           onPress={() => setShowAddMealModal(true)}
         >
-          <Ionicons name="restaurant" size={20} color={colors.pastelGreenText} />
+          <Ionicons
+            name="restaurant"
+            size={20}
+            color={colors.pastelGreenText}
+          />
           <Text style={styles.addButtonText}>Add Meal</Text>
         </TouchableOpacity>
 
@@ -473,7 +484,11 @@ export default function FoodJournal() {
                     onPress={() => handleDeleteItem(item.tempClientId)}
                     style={styles.deleteButton}
                   >
-                    <Ionicons name="close" size={16} color={colors.textInverse} />
+                    <Ionicons
+                      name="close"
+                      size={16}
+                      color={colors.textInverse}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -482,18 +497,20 @@ export default function FoodJournal() {
         )}
 
         {/* Empty State - Only show when no current meal AND no recent meals */}
-        {foodItems.length === 0 && (!mealSummary || mealSummary.length === 0) && (
-          <View style={styles.emptyState}>
-            <Ionicons 
-              name="restaurant-outline" 
-              size={64} 
-              color={colors.textTertiary} 
-            />
-            <Text style={styles.emptyStateText}>
-              No meals added yet.{"\n"}Tap "Add Meal" to get started!
-            </Text>
-          </View>
-        )}
+        {foodItems.length === 0 &&
+          (!mealSummary || mealSummary.length === 0) && (
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="restaurant-outline"
+                size={64}
+                color={colors.textTertiary}
+              />
+              <Text style={styles.emptyStateText}>
+                No meals added yet.{"\n"}Tap &quot;Add Meal&quot; to get
+                started!
+              </Text>
+            </View>
+          )}
 
         {/* Previous Meals Section - from team's version */}
         {mealSummary && mealSummary.length > 0 && (
@@ -574,7 +591,11 @@ export default function FoodJournal() {
                   style={styles.scanButton}
                   onPress={() => setShowScanner(true)}
                 >
-                  <Ionicons name="scan" size={20} color={colors.pastelGreenText} />
+                  <Ionicons
+                    name="scan"
+                    size={20}
+                    color={colors.pastelGreenText}
+                  />
                   <Text style={styles.scanButtonText}>Scan Barcode</Text>
                 </TouchableOpacity>
 
@@ -672,10 +693,12 @@ export default function FoodJournal() {
                 style={styles.submitButton}
                 onPress={handleSubmitMeal}
               >
-                <Ionicons name="checkmark-circle" size={24} color={colors.pastelGreenText} />
-                <Text style={styles.submitButtonText}>
-                  Submit Meal
-                </Text>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={24}
+                  color={colors.pastelGreenText}
+                />
+                <Text style={styles.submitButtonText}>Submit Meal</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
