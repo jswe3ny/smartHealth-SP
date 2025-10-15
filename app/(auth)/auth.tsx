@@ -1,9 +1,8 @@
-import { useThemeColors } from "@/assets/styles";
-import { AppLogo } from "@/components/AppLogo";
 import { Button } from "@/components/button";
 import { useAuth } from "@/contexts/authContext";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Keyboard,
@@ -20,8 +19,19 @@ const isValidEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 const MIN_PW = 8;
 
 export default function Auth() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
   const { isLoading, accountSignIn, accountSignUp } = useAuth();
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  
+  // Set initial tab based on route params
+  useEffect(() => {
+    if (params.mode === 'signup') {
+      setActiveTab('signup');
+    } else if (params.mode === 'signin') {
+      setActiveTab('signin');
+    }
+  }, [params.mode]);
   
   // Form state
   const [email, setEmail] = useState("");
@@ -100,14 +110,19 @@ export default function Auth() {
     <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.innerContainer}>
-          {/* Header with title and close button */}
+          {/* Header with title and back button */}
           <View style={styles.header}>
+            <Pressable 
+              style={styles.backButton}
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="arrow-back" size={24} color="#333" />
+            </Pressable>
             <View style={styles.logoContainer}>
             </View>
             <Text style={styles.title}>Welcome to Smart Health</Text>
-            <Pressable style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#333" />
-            </Pressable>
           </View>
 
           {/* Sign In / Sign Up tabs */}
@@ -304,6 +319,8 @@ const styles = StyleSheet.create({
   header: {
     alignItems: "center",
     marginBottom: 24,
+    position: "relative",
+    paddingTop: 8,
   },
   logoContainer: {
     marginBottom: 16,
@@ -314,11 +331,12 @@ const styles = StyleSheet.create({
     color: "#111827",
     textAlign: "center",
   },
-  closeButton: {
+  backButton: {
     position: "absolute",
-    right: 0,
-    top: 0,
+    left: 0,
+    top: -8,
     padding: 8,
+    zIndex: 10,
   },
   tabContainer: {
     flexDirection: "row",

@@ -18,7 +18,7 @@ export default function LandingScreen() {
       <View style={styles.content}>
         {/* Logo and branding section */}
         <View style={styles.logoSection}>
-          <AppLogo size={120} style={{ marginBottom: 24 }} />
+          <AppLogo size={100} style={{ marginBottom: 16 }} />
           <Text style={styles.title}>Smart Health</Text>
           <Text style={styles.subtitle}>Your wellness companion</Text>
         </View>
@@ -50,7 +50,7 @@ export default function LandingScreen() {
       <View style={styles.buttonContainer}>
         <Button
           title="Sign In"
-          onPress={() => router.push("./auth")}
+          onPress={() => router.push({ pathname: "./auth", params: { mode: "signin" } })}
           size="lg"
           bg={colors.pastelGreen}
           color={colors.pastelGreenText}
@@ -58,7 +58,7 @@ export default function LandingScreen() {
         />
         <Button
           title="Create Account"
-          onPress={() => router.push("./auth")}
+          onPress={() => router.push({ pathname: "./auth", params: { mode: "signup" } })}
           size="lg"
           bg="#BBDEFB"
           color="#1565C0"
@@ -79,12 +79,12 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 20,
     justifyContent: "center",
   },
   logoSection: {
     alignItems: "center",
-    marginBottom: 60,
+    marginBottom: 40,
   },
   title: {
     fontSize: 32,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   featuresContainer: {
-    gap: 20,
+    gap: 16,
   },
   featureItem: {
     flexDirection: "row",
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 20,
     gap: 12,
   },
   blueButton: {
