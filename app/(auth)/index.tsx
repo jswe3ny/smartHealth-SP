@@ -50,7 +50,7 @@ export default function LandingScreen() {
       <View style={styles.buttonContainer}>
         <Button
           title="Sign In"
-          onPress={() => router.push("./login")}
+          onPress={() => router.push("./auth")}
           size="lg"
           bg={colors.pastelGreen}
           color={colors.pastelGreenText}
@@ -58,7 +58,7 @@ export default function LandingScreen() {
         />
         <Button
           title="Create Account"
-          onPress={() => router.push("./createAccount")}
+          onPress={() => router.push("./auth")}
           size="lg"
           bg="#BBDEFB"
           color="#1565C0"

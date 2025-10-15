@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Alert,
     Modal,
@@ -15,8 +15,13 @@ import {
 
 import { fontSize, fontWeight, radius, spacing, useThemeColors } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
-import { addMeal } from "@/utils/foodjournal.repo";
-import { FoodItem, ProductData } from "@/utils/types/foodJournal.types";
+import { addMeal, getRecentMealSummaries } from "@/utils/foodjournal.repo";
+import {
+  FoodItem,
+  MealSummary,
+  ProductData,
+} from "@/utils/types/foodJournal.types";
+import { Link } from "expo-router";
 
 export type NewFoodItem = Omit<FoodItem, "foodItemId">;
 
@@ -40,6 +45,24 @@ export default function FoodJournal() {
   const [foodItemCount, setFoodItemCount] = useState(0);
   const [showScanner, setShowScanner] = useState(false);
   const [showAddMealModal, setShowAddMealModal] = useState(false);
+
+  const [mealSummary, setMealSummary] = useState<MealSummary[]>([]);
+
+  // Real-time meal updates from team's version
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    const unsubscribe = getRecentMealSummaries(
+      currentUser.uid,
+      (updatedMeals) => {
+        setMealSummary(updatedMeals);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser]);
 
   const handleInputChange = (field: keyof FoodItem, value: string) => {
     setCurrentFoodItem((prevItem) => ({
@@ -372,6 +395,31 @@ export default function FoodJournal() {
       textAlign: "center",
       marginTop: spacing.md,
     },
+    mealSummarySection: {
+      marginTop: spacing.xl,
+    },
+    mealSummaryTitle: {
+      fontSize: fontSize.xl,
+      fontWeight: fontWeight.bold,
+      color: colors.text,
+      marginBottom: spacing.md,
+    },
+    mealSummaryCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    mealSummaryName: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text,
+    },
   });
 
   return (
@@ -441,6 +489,22 @@ export default function FoodJournal() {
             <Text style={styles.emptyStateText}>
               No meals added yet.{"\n"}Tap "Add Meal" to get started!
             </Text>
+          </View>
+        )}
+
+        {/* Previous Meals Section - from team's version */}
+        {mealSummary && mealSummary.length > 0 && (
+          <View style={styles.mealSummarySection}>
+            <Text style={styles.mealSummaryTitle}>Recent Meals</Text>
+            {mealSummary.map((item) => (
+              <Link key={item.id} href={`./meals/${item.id}`} asChild>
+                <TouchableOpacity style={styles.mealSummaryCard}>
+                  <Text style={styles.mealSummaryName}>
+                    {item.mealName || "Unnamed Meal"}
+                  </Text>
+                </TouchableOpacity>
+              </Link>
+            ))}
           </View>
         )}
       </ScrollView>
