@@ -1,6 +1,7 @@
 import {
     fontSize,
     fontWeight,
+    neutralColors,
     radius,
     spacing,
     useThemeColors,
@@ -199,7 +200,7 @@ export function BarcodeScanner({
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.lg,
       borderRadius: radius.md,
-      shadowColor: colors.black,
+      shadowColor: neutralColors.black,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,
       shadowRadius: 4,
@@ -258,7 +259,7 @@ export function BarcodeScanner({
       borderRadius: radius.lg,
       padding: spacing.xl,
       alignItems: "center",
-      shadowColor: colors.black,
+      shadowColor: neutralColors.black,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
@@ -312,6 +313,7 @@ export function BarcodeScanner({
       <Modal
         visible={visible}
         animationType="slide"
+        presentationStyle="fullScreen"
         onRequestClose={handleClose}
       >
         <View style={styles.permissionContainer}>
@@ -348,7 +350,12 @@ export function BarcodeScanner({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+    <Modal 
+      visible={visible} 
+      animationType="slide" 
+      presentationStyle="fullScreen"
+      onRequestClose={handleClose}
+    >
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>

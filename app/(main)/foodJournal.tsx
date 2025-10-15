@@ -13,13 +13,13 @@ import {
     View,
 } from "react-native";
 
-import { fontSize, fontWeight, radius, spacing, useThemeColors } from "@/assets/styles";
+import { fontSize, fontWeight, neutralColors, radius, spacing, useThemeColors } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { addMeal, getRecentMealSummaries } from "@/utils/foodjournal.repo";
 import {
-  FoodItem,
-  MealSummary,
-  ProductData,
+    FoodItem,
+    MealSummary,
+    ProductData,
 } from "@/utils/types/foodJournal.types";
 import { Link } from "expo-router";
 
@@ -254,7 +254,7 @@ export default function FoodJournal() {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      shadowColor: colors.black,
+      shadowColor: neutralColors.black,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 4,
@@ -409,7 +409,7 @@ export default function FoodJournal() {
       borderRadius: radius.md,
       padding: spacing.lg,
       marginBottom: spacing.md,
-      shadowColor: colors.black,
+      shadowColor: neutralColors.black,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,
       shadowRadius: 2,
@@ -443,7 +443,7 @@ export default function FoodJournal() {
         </TouchableOpacity>
 
         {/* Food Items List */}
-        {foodItems.length > 0 ? (
+        {foodItems.length > 0 && (
           <>
             <Text
               style={{
@@ -479,7 +479,10 @@ export default function FoodJournal() {
               </View>
             ))}
           </>
-        ) : (
+        )}
+
+        {/* Empty State - Only show when no current meal AND no recent meals */}
+        {foodItems.length === 0 && (!mealSummary || mealSummary.length === 0) && (
           <View style={styles.emptyState}>
             <Ionicons 
               name="restaurant-outline" 
@@ -511,7 +514,7 @@ export default function FoodJournal() {
 
       {/* Add Meal Modal */}
       <Modal
-        visible={showAddMealModal}
+        visible={showAddMealModal && !showScanner}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowAddMealModal(false)}
