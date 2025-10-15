@@ -118,6 +118,15 @@ ${
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    backButton: {
+      padding: spacing.xs,
+    },
+    headerContent: {
+      flex: 1,
     },
     headerTitle: {
       fontSize: fontSize.xxl,
@@ -222,10 +231,18 @@ ${
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Scan Barcode</Text>
-        <Text style={styles.headerSubtitle}>
-          {userData.profile?.firstName || "User"}
-        </Text>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Barcode Scanner</Text>
+          <Text style={styles.headerSubtitle}>
+            {userData.profile?.firstName || "User"}
+          </Text>
+        </View>
       </View>
 
       {!showScanner ? (

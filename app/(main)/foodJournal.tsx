@@ -21,7 +21,7 @@ import {
     MealSummary,
     ProductData,
 } from "@/utils/types/foodJournal.types";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 
 export type NewFoodItem = Omit<FoodItem, "foodItemId">;
 
@@ -29,6 +29,7 @@ export default function FoodJournal() {
   const { currentUser } = useAuth();
   const userData = useUserInfo();
   const colors = useThemeColors();
+  const router = useRouter();
 
   const [mealName, setMealName] = useState("");
   const [mealType, setMealType] = useState("breakfast");
@@ -183,6 +184,18 @@ export default function FoodJournal() {
 
   const handleSubmitMeal = async () => {
     const uid = currentUser?.uid;
+    
+    // Validate before submitting
+    if (!mealName || mealName.trim() === "") {
+      Alert.alert("Missing Information", "Please enter a meal name.");
+      return;
+    }
+    
+    if (foodItems.length === 0) {
+      Alert.alert("Missing Information", "Please add at least one food item to the meal.");
+      return;
+    }
+    
     try {
       const temp = await addMeal(mealName, mealType, uid, foodItems);
       setFoodItems([]);
@@ -202,7 +215,8 @@ export default function FoodJournal() {
       console.log("mealId: ", temp);
     } catch (error) {
       console.log("error: ", error);
-      Alert.alert("Error", "Failed to add meal");
+      const errorMessage = error instanceof Error ? error.message : "Failed to add meal";
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -216,6 +230,15 @@ export default function FoodJournal() {
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    backButton: {
+      padding: spacing.xs,
+    },
+    headerContent: {
+      flex: 1,
     },
     headerTitle: {
       fontSize: fontSize.xxl,
@@ -426,10 +449,18 @@ export default function FoodJournal() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Food Journal</Text>
-        <Text style={styles.headerSubtitle}>
-          {userData.profile?.firstName || "User"}
-        </Text>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Food Journal</Text>
+          <Text style={styles.headerSubtitle}>
+            {userData.profile?.firstName || "User"}
+          </Text>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
