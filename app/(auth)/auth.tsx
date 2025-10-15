@@ -1,7 +1,6 @@
 import { Button } from "@/components/button";
 import { useAuth } from "@/contexts/authContext";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -18,21 +17,48 @@ import {
 const isValidEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 const MIN_PW = 8;
 
-export default function CreateAccount() {
-  const { accountSignUp } = useAuth();
-  const router = useRouter();
-
+export default function Auth() {
+  const { isLoading, accountSignIn, accountSignUp } = useAuth();
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  
+  // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signup');
 
-  const pwRef = useRef<TextInput>(null);
-  const confirmRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
+
+  const handleSignIn = async () => {
+    const e = email.trim();
+    const p = password;
+
+    // client-side validation
+    if (!e || !p) {
+      setError("Please enter both email and password.");
+      return;
+    }
+    if (!isValidEmail(e)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (isLoading) return; // block double taps
+
+    setError(null);
+    try {
+      await accountSignIn(e, p);
+    } catch (err: any) {
+      const msg =
+        err?.message ??
+        err?.code ??
+        "Login failed. Please try again.";
+      setError(msg);
+    }
+  };
 
   const handleSignUp = async () => {
     if (isLoading) return;
@@ -55,22 +81,24 @@ export default function CreateAccount() {
       return;
     }
 
-    setIsLoading(true);
     setError(null);
     try {
       await accountSignUp(e, password);
     } catch (e: any) {
       setError(e?.message ?? "Sign up failed. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  const handleTabChange = (tab: 'signin' | 'signup') => {
+    setActiveTab(tab);
+    setError(null); // Clear any existing errors when switching tabs
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.innerContainer}>
-          {/* Header with Apple logo, title, and close button */}
+          {/* Header with title and close button */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
             </View>
@@ -84,10 +112,7 @@ export default function CreateAccount() {
           <View style={styles.tabContainer}>
             <Pressable 
               style={[styles.tab, activeTab === 'signin' && styles.activeTab]}
-              onPress={() => {
-                setActiveTab('signin');
-                router.push("/login");
-              }}
+              onPress={() => handleTabChange('signin')}
             >
               <Text style={[styles.tabText, activeTab === 'signin' && styles.activeTabText]}>
                 Sign In
@@ -95,7 +120,7 @@ export default function CreateAccount() {
             </Pressable>
             <Pressable 
               style={[styles.tab, activeTab === 'signup' && styles.activeTab]}
-              onPress={() => setActiveTab('signup')}
+              onPress={() => handleTabChange('signup')}
             >
               <Text style={[styles.tabText, activeTab === 'signup' && styles.activeTabText]}>
                 Sign Up
@@ -103,12 +128,23 @@ export default function CreateAccount() {
             </Pressable>
           </View>
 
-          {/* Information box */}
-          <View style={styles.infoBox}>
-            <Ionicons name="checkmark-circle" size={20} color="#007AFF" />
-            <Text style={styles.infoText}>Create your personalized health profile</Text>
+          {/* Information/Security message */}
+          <View style={styles.messageBox}>
+            <Ionicons 
+              name={activeTab === 'signin' ? "shield-checkmark" : "checkmark-circle"} 
+              size={20} 
+              color={activeTab === 'signin' ? "#4CAF50" : "#007AFF"} 
+            />
+            <Text style={[
+              styles.messageText,
+              { color: activeTab === 'signin' ? "#4CAF50" : "#007AFF" }
+            ]}>
+              {activeTab === 'signin' 
+                ? "Your health data is encrypted and secure"
+                : "Create your personalized health profile"
+              }
+            </Text>
           </View>
-
 
           {error ? (
             <View style={styles.errorBox} accessible accessibilityRole="alert">
@@ -132,7 +168,7 @@ export default function CreateAccount() {
                 autoComplete="email"
                 textContentType="emailAddress"
                 returnKeyType="next"
-                onSubmitEditing={() => pwRef.current?.focus()}
+                onSubmitEditing={() => passwordRef.current?.focus()}
                 accessibilityLabel="Email"
               />
             </View>
@@ -144,28 +180,28 @@ export default function CreateAccount() {
             <View style={styles.inputWrapper}>
               <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
               <TextInput
-                ref={pwRef}
+                ref={passwordRef}
                 style={styles.passwordInput}
-                placeholder="Create a password"
+                placeholder={activeTab === 'signin' ? "Enter your password" : "Create a password"}
                 placeholderTextColor="#888"
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry={!showPw}
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
-                autoComplete="password-new"
-                textContentType="newPassword"
-                returnKeyType="next"
-                onSubmitEditing={() => confirmRef.current?.focus()}
+                autoComplete={activeTab === 'signin' ? "password" : "password-new"}
+                textContentType={activeTab === 'signin' ? "password" : "newPassword"}
+                returnKeyType={activeTab === 'signin' ? "go" : "next"}
+                onSubmitEditing={activeTab === 'signin' ? handleSignIn : () => confirmPasswordRef.current?.focus()}
                 accessibilityLabel="Password"
               />
               <Pressable
-                onPress={() => setShowPw(s => !s)}
+                onPress={() => setShowPassword(s => !s)}
                 style={styles.eyeButton}
                 accessibilityRole="button"
-                accessibilityLabel={showPw ? "Hide password" : "Show password"}
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
               >
                 <Ionicons 
-                  name={showPw ? "eye-off-outline" : "eye-outline"} 
+                  name={showPassword ? "eye-off-outline" : "eye-outline"} 
                   size={20} 
                   color="#888" 
                 />
@@ -173,61 +209,78 @@ export default function CreateAccount() {
             </View>
           </View>
 
-          {/* Confirm Password input */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Confirm Password</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
-              <TextInput
-                ref={confirmRef}
-                style={styles.passwordInput}
-                placeholder="Confirm your password"
-                placeholderTextColor="#888"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirm}
-                autoCapitalize="none"
-                autoComplete="password-new"
-                textContentType="newPassword"
-                returnKeyType="go"
-                onSubmitEditing={handleSignUp}
-                accessibilityLabel="Confirm Password"
-              />
-              <Pressable
-                onPress={() => setShowConfirm(s => !s)}
-                style={styles.eyeButton}
-                accessibilityRole="button"
-                accessibilityLabel={showConfirm ? "Hide password" : "Show password"}
-              >
-                <Ionicons 
-                  name={showConfirm ? "eye-off-outline" : "eye-outline"} 
-                  size={20} 
-                  color="#888" 
+          {/* Confirm Password input - only show for signup */}
+          {activeTab === 'signup' && (
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Confirm Password</Text>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+                <TextInput
+                  ref={confirmPasswordRef}
+                  style={styles.passwordInput}
+                  placeholder="Confirm your password"
+                  placeholderTextColor="#888"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  autoCapitalize="none"
+                  autoComplete="password-new"
+                  textContentType="newPassword"
+                  returnKeyType="go"
+                  onSubmitEditing={handleSignUp}
+                  accessibilityLabel="Confirm Password"
                 />
-              </Pressable>
+                <Pressable
+                  onPress={() => setShowConfirmPassword(s => !s)}
+                  style={styles.eyeButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  <Ionicons 
+                    name={showConfirmPassword ? "eye-off-outline" : "eye-outline"} 
+                    size={20} 
+                    color="#888" 
+                  />
+                </Pressable>
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* Create Account button */}
+          {/* Action button */}
           <Button
-            title={isLoading ? "Creating..." : "Create Account"}
-            onPress={handleSignUp}
+            title={
+              isLoading 
+                ? (activeTab === 'signin' ? "Signing in..." : "Creating...") 
+                : (activeTab === 'signin' ? "Sign In" : "Create Account")
+            }
+            onPress={activeTab === 'signin' ? handleSignIn : handleSignUp}
             size="lg"
-            bg="#007AFF"
+            bg={activeTab === 'signin' ? "#4CAF50" : "#007AFF"}
             fullWidth
             disabled={isLoading}
-            style={styles.createAccountButton}
+            style={styles.actionButton}
           />
 
-          {/* Legal text */}
-          <Text style={styles.legalText}>
-            By signing up, you agree to our Terms of Service and Privacy Policy
-          </Text>
+          {/* Forgot password link - only show for signin */}
+          {activeTab === 'signin' && (
+            <Pressable style={styles.forgotPasswordButton}>
+              <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+            </Pressable>
+          )}
+
+          {/* Legal text - only show for signup */}
+          {activeTab === 'signup' && (
+            <Text style={styles.legalText}>
+              By signing up, you agree to our Terms of Service and Privacy Policy
+            </Text>
+          )}
 
           {isLoading ? (
             <View style={styles.loaderRow}>
               <ActivityIndicator />
-              <Text style={styles.loaderText}>Creating your account…</Text>
+              <Text style={styles.loaderText}>
+                {activeTab === 'signin' ? "Authenticating…" : "Creating your account…"}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -305,17 +358,16 @@ const styles = StyleSheet.create({
     color: "#333",
     fontWeight: "600",
   },
-  infoBox: {
+  messageBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E3F2FD",
+    backgroundColor: "#E8F5E8",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
     marginBottom: 24,
   },
-  infoText: {
-    color: "#007AFF",
+  messageText: {
     fontSize: 14,
     fontWeight: "500",
     marginLeft: 8,
@@ -359,9 +411,18 @@ const styles = StyleSheet.create({
     right: 12,
     padding: 8,
   },
-  createAccountButton: {
+  actionButton: {
     marginTop: 8,
     marginBottom: 16,
+  },
+  forgotPasswordButton: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "500",
   },
   legalText: {
     color: "#666",
