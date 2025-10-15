@@ -1,18 +1,20 @@
+import { useThemeColors } from "@/assets/styles";
+import { AppLogo } from "@/components/AppLogo";
 import { Button } from "@/components/button";
 import { useAuth } from "@/contexts/authContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Keyboard,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
+    ActivityIndicator,
+    Keyboard,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 
 const isValidEmail = (s: string) =>
@@ -20,6 +22,7 @@ const isValidEmail = (s: string) =>
 
 const AuthForm = () => {
   const { isLoading, accountSignIn } = useAuth();
+  const colors = useThemeColors();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -61,14 +64,11 @@ const AuthForm = () => {
     <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={styles.innerContainer}>
-          {/* Header with Apple logo, title, and close button */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-            </View>
-            <Text style={styles.title}>Welcome to Smart Health</Text>
-            <Pressable style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#333" />
-            </Pressable>
+          {/* Logo and Title */}
+          <View style={styles.logoSection}>
+            <AppLogo size={80} style={{ marginBottom: 16 }} />
+            <Text style={styles.title}>Smart Health</Text>
+            <Text style={styles.subtitle}>Your wellness companion</Text>
           </View>
 
           {/* Sign In / Sign Up tabs */}
@@ -96,7 +96,7 @@ const AuthForm = () => {
 
           {/* Security message */}
           <View style={styles.securityBox}>
-            <Ionicons name="shield-checkmark" size={20} color="#4CAF50" />
+            <Ionicons name="shield-checkmark" size={20} color="#2E7D32" />
             <Text style={styles.securityText}>Your health data is encrypted and secure</Text>
           </View>
 
@@ -168,7 +168,8 @@ const AuthForm = () => {
             title={isLoading ? "Signing in..." : "Sign In"}
             onPress={handleAuthentication}
             size="lg"
-            bg="#4CAF50"
+            bg={colors.pastelGreen}
+            color={colors.pastelGreenText}
             fullWidth
             disabled={isLoading}
             style={styles.signInButton}
@@ -194,50 +195,41 @@ const AuthForm = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F9FAFB",
   },
   innerContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 40,
   },
-  header: {
-    flexDirection: "row",
+  logoSection: {
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 30,
-  },
-  logoContainer: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
+    marginBottom: 40,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    flex: 1,
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#111827",
     textAlign: "center",
   },
-  closeButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
+  subtitle: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginTop: 4,
   },
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 12,
     padding: 4,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 6,
+    borderRadius: 10,
     alignItems: "center",
   },
   activeTab: {
@@ -245,34 +237,36 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 3,
+    elevation: 3,
   },
   tabText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#333",
+    color: "#6B7280",
   },
   activeTabText: {
-    color: "#333",
-    fontWeight: "600",
+    color: "#111827",
+    fontWeight: "700",
   },
   securityBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E8F5E8",
+    backgroundColor: "#F0FDF4",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#DCFCE7",
   },
   securityText: {
-    color: "#4CAF50",
+    color: "#2E7D32",
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
     marginLeft: 8,
   },
   inputContainer: {
@@ -280,64 +274,65 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
+    fontWeight: "600",
+    color: "#374151",
     marginBottom: 8,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingHorizontal: 14,
   },
   inputIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    height: 50,
+    height: 52,
     fontSize: 16,
-    color: "#333",
+    color: "#111827",
   },
   passwordInput: {
     flex: 1,
-    height: 50,
+    height: 52,
     fontSize: 16,
-    color: "#333",
+    color: "#111827",
     paddingRight: 40,
   },
   eyeButton: {
     position: "absolute",
-    right: 12,
+    right: 14,
     padding: 8,
   },
   signInButton: {
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   forgotPasswordButton: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   forgotPasswordText: {
-    color: "#666",
+    color: "#2E7D32",
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   errorBox: {
     width: "100%",
-    backgroundColor: "#fdecea",
-    borderColor: "#f5c6cb",
+    backgroundColor: "#FFE5E5",
+    borderColor: "#FF3B30",
     borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 12,
     marginBottom: 16,
   },
   errorText: {
-    color: "#a94442",
+    color: "#FF3B30",
+    fontWeight: "600",
   },
   loaderRow: {
     flexDirection: "row",

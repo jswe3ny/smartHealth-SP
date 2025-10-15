@@ -1,18 +1,20 @@
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
-import { colors } from "@/assets/styles";
+import { fontSize, fontWeight, radius, spacing, useThemeColors } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
-import { Button } from "@/components/button";
 import { addMeal } from "@/utils/foodjournal.repo";
 import { FoodItem, ProductData } from "@/utils/types/foodJournal.types";
 
@@ -21,6 +23,7 @@ export type NewFoodItem = Omit<FoodItem, "foodItemId">;
 export default function FoodJournal() {
   const { currentUser } = useAuth();
   const userData = useUserInfo();
+  const colors = useThemeColors();
 
   const [mealName, setMealName] = useState("");
   const [mealType, setMealType] = useState("breakfast");
@@ -36,6 +39,7 @@ export default function FoodJournal() {
   });
   const [foodItemCount, setFoodItemCount] = useState(0);
   const [showScanner, setShowScanner] = useState(false);
+  const [showAddMealModal, setShowAddMealModal] = useState(false);
 
   const handleInputChange = (field: keyof FoodItem, value: string) => {
     setCurrentFoodItem((prevItem) => ({
@@ -170,245 +174,453 @@ export default function FoodJournal() {
         fat: null,
       });
       setFoodItemCount(0);
+      setShowAddMealModal(false);
+      Alert.alert("Success", "Meal added successfully!");
       console.log("mealId: ", temp);
     } catch (error) {
       console.log("error: ", error);
+      Alert.alert("Error", "Failed to add meal");
     }
   };
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.backgroundSecondary,
+    },
+    header: {
+      padding: spacing.lg,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerTitle: {
+      fontSize: fontSize.xxl,
+      fontWeight: fontWeight.bold,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    headerSubtitle: {
+      fontSize: fontSize.sm,
+      color: colors.textSecondary,
+    },
+    content: {
+      padding: spacing.lg,
+    },
+    addButton: {
+      backgroundColor: colors.pastelGreen,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      borderRadius: radius.md,
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
+    },
+    addButtonText: {
+      color: colors.pastelGreenText,
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+    },
+    foodItemCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    foodItemName: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    foodItemMacros: {
+      fontSize: fontSize.sm,
+      color: colors.textSecondary,
+    },
+    foodItemCalories: {
+      fontSize: fontSize.xl,
+      fontWeight: fontWeight.bold,
+      color: colors.primary,
+    },
+    foodItemCaloriesLabel: {
+      fontSize: fontSize.xs,
+      color: colors.textTertiary,
+      marginTop: spacing.xs,
+    },
+    deleteButton: {
+      backgroundColor: colors.error,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: spacing.sm,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      padding: spacing.xl,
+      maxHeight: "90%",
+    },
+    modalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing.lg,
+    },
+    modalTitle: {
+      fontSize: fontSize.xxl,
+      fontWeight: fontWeight.bold,
+      color: colors.text,
+    },
+    closeButton: {
+      padding: spacing.sm,
+    },
+    closeButtonText: {
+      fontSize: fontSize.xl,
+      color: colors.textSecondary,
+    },
+    formSection: {
+      marginBottom: spacing.lg,
+    },
+    label: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.text,
+      marginBottom: spacing.sm,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.backgroundSecondary,
+      padding: spacing.md,
+      borderRadius: radius.md,
+      fontSize: fontSize.md,
+      color: colors.text,
+    },
+    scanButton: {
+      backgroundColor: colors.pastelGreen,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      alignItems: "center",
+      marginVertical: spacing.md,
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    scanButtonText: {
+      color: colors.pastelGreenText,
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+    },
+    secondaryButton: {
+      backgroundColor: colors.backgroundTertiary,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      alignItems: "center",
+      marginTop: spacing.md,
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+    },
+    submitButton: {
+      backgroundColor: colors.pastelGreen,
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.xl,
+      borderRadius: radius.md,
+      alignItems: "center",
+      marginTop: spacing.xl,
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: spacing.sm,
+    },
+    submitButtonText: {
+      color: colors.pastelGreenText,
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.bold,
+    },
+    emptyState: {
+      alignItems: "center",
+      padding: spacing.xxl,
+    },
+    emptyStateText: {
+      fontSize: fontSize.md,
+      color: colors.textSecondary,
+      textAlign: "center",
+      marginTop: spacing.md,
+    },
+  });
+
   return (
-    <ScrollView>
-      <Text>Food Journal</Text>
-      <Text>{userData.profile?.firstName} </Text>
-      <View style={{ padding: 10, backgroundColor: "#f0f0f0" }}>
-        <View
-          style={{ backgroundColor: "white", padding: 15, borderRadius: 8 }}
-        >
-          <Text>Meal Entry Form</Text>
-          <Text style={{ fontWeight: "bold" }}>Meal Name </Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              padding: 10,
-              borderRadius: 5,
-              marginBottom: 10,
-            }}
-            placeholder="Meal Name (e.g., Morning Oats)"
-            value={mealName}
-            onChangeText={setMealName}
-          />
-          <Text style={{ fontWeight: "bold" }}>Meal Type </Text>
-          <TextInput
-            style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              padding: 10,
-              borderRadius: 5,
-              marginBottom: 10,
-            }}
-            placeholder="Enter Meal Type - lowercase"
-            value={mealType}
-            onChangeText={setMealType}
-          />
-          {/* adding food items section */}
-          <View>
-            <Text
-              style={{ fontSize: 16, fontWeight: "bold", marginBottom: 10 }}
-            >
-              Food Item {foodItemCount + 1}
-            </Text>
-
-            {/* Scan Barcode Button */}
-            <TouchableOpacity
-              style={{
-                backgroundColor: colors.primary,
-                paddingVertical: 10,
-                paddingHorizontal: 20,
-                borderRadius: 5,
-                alignItems: "center",
-                marginBottom: 10,
-              }}
-              onPress={() => setShowScanner(true)}
-            >
-              <Text style={{ color: "white", fontWeight: "bold" }}>
-                Scan Barcode
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={{ fontWeight: "bold" }}>Food Name </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
-                borderRadius: 5,
-                marginBottom: 10,
-              }}
-              placeholder="Food Name"
-              value={currentFoodItem.foodName.toString()}
-              onChangeText={(text) => handleInputChange("foodName", text)}
-            />
-            <Text style={{ fontWeight: "bold" }}>Calories: </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
-                borderRadius: 5,
-                marginBottom: 10,
-              }}
-              placeholder="Calories"
-              keyboardType="numeric"
-              value={currentFoodItem.calories?.toString()}
-              onChangeText={(text) => handleInputChange("calories", text)}
-            />
-            <Text style={{ fontWeight: "bold" }}>Sugar: (g) </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
-                borderRadius: 5,
-                marginBottom: 10,
-              }}
-              placeholder="Sugar (g)"
-              keyboardType="numeric"
-              value={currentFoodItem.sugar?.toString()}
-              onChangeText={(text) => handleInputChange("sugar", text)}
-            />
-            <Text style={{ fontWeight: "bold" }}> Carbs: (mg) </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
-                borderRadius: 5,
-                marginBottom: 10,
-              }}
-              placeholder="Carbs (mg)"
-              keyboardType="numeric"
-              value={currentFoodItem.carbs?.toString()}
-              onChangeText={(text) => handleInputChange("carbs", text)}
-            />
-            <Text style={{ fontWeight: "bold" }}>Fat: (g) </Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
-                borderRadius: 5,
-                marginBottom: 10,
-              }}
-              placeholder="Fat (g)"
-              keyboardType="numeric"
-              value={currentFoodItem.fat?.toString()}
-              onChangeText={(text) => handleInputChange("fat", text)}
-            />
-            <Text style={{ fontWeight: "bold" }}>Protein: (g)</Text>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                padding: 10,
-                borderRadius: 5,
-                marginBottom: 10,
-              }}
-              placeholder="Protein(g)"
-              keyboardType="numeric"
-              value={currentFoodItem.protein?.toString()}
-              onChangeText={(text) => handleInputChange("protein", text)}
-            />
-            <TouchableOpacity
-              style={{
-                backgroundColor: "#007AFF",
-                paddingVertical: 10,
-                paddingHorizontal: 20,
-                borderRadius: 5,
-                alignSelf: "flex-start",
-                marginTop: 10,
-              }}
-              onPress={handleAddItem}
-            >
-              <Text style={{ color: "white", fontWeight: "bold" }}>
-                add item
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Button
-            style={{ marginTop: 10 }}
-            title="Submit"
-            size="lg"
-            bg={colors.gray}
-            onPress={handleSubmitMeal}
-          />
-        </View>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Food Journal</Text>
+        <Text style={styles.headerSubtitle}>
+          {userData.profile?.firstName || "User"}
+        </Text>
       </View>
 
-      {foodItems &&
-        foodItems.map((item) => (
-          <View
-            key={item.tempClientId}
-            style={{
-              backgroundColor: "white",
-              borderRadius: 8,
-              padding: 15,
-              marginVertical: 5,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            {/* Left side with the food's name and macros */}
-            <View>
-              <Text style={{ fontSize: 16, fontWeight: "bold", color: "#333" }}>
-                {item.foodName}
-              </Text>
-              <Text style={{ fontSize: 12, color: "gray", marginTop: 4 }}>
-                P: {item.protein || 0}g | C: {item.carbs || 0}g | F:{" "}
-                {item.fat || 0}g
-              </Text>
-            </View>
+      <ScrollView style={styles.content}>
+        {/* Add Meal Button */}
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setShowAddMealModal(true)}
+        >
+          <Ionicons name="restaurant" size={20} color={colors.pastelGreenText} />
+          <Text style={styles.addButtonText}>Add Meal</Text>
+        </TouchableOpacity>
 
-            {/* Right side with the calorie count */}
-            <View style={{ alignItems: "flex-end" }}>
-              <Text
-                style={{ fontSize: 18, fontWeight: "bold", color: "#007AFF" }}
-              >
-                {item.calories || 0}
-              </Text>
-              <Text style={{ fontSize: 12, color: "gray" }}>kcal</Text>
+        {/* Food Items List */}
+        {foodItems.length > 0 ? (
+          <>
+            <Text
+              style={{
+                fontSize: fontSize.lg,
+                fontWeight: fontWeight.semibold,
+                color: colors.text,
+                marginBottom: spacing.md,
+              }}
+            >
+              Current Meal: {mealName || "Untitled"}
+            </Text>
+            {foodItems.map((item) => (
+              <View key={item.tempClientId} style={styles.foodItemCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.foodItemName}>{item.foodName}</Text>
+                  <Text style={styles.foodItemMacros}>
+                    P: {item.protein || 0}g • C: {item.carbs || 0}g • F:{" "}
+                    {item.fat || 0}g
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={styles.foodItemCalories}>
+                    {item.calories || 0}
+                  </Text>
+                  <Text style={styles.foodItemCaloriesLabel}>kcal</Text>
+                  <TouchableOpacity
+                    onPress={() => handleDeleteItem(item.tempClientId)}
+                    style={styles.deleteButton}
+                  >
+                    <Ionicons name="close" size={16} color={colors.textInverse} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </>
+        ) : (
+          <View style={styles.emptyState}>
+            <Ionicons 
+              name="restaurant-outline" 
+              size={64} 
+              color={colors.textTertiary} 
+            />
+            <Text style={styles.emptyStateText}>
+              No meals added yet.{"\n"}Tap "Add Meal" to get started!
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Add Meal Modal */}
+      <Modal
+        visible={showAddMealModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddMealModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Meal</Text>
               <TouchableOpacity
-                // The onPress handler calls your delete function, passing the
-                // index of the item you want to remove.
-                onPress={() => {
-                  handleDeleteItem(item.tempClientId);
-                }}
-                style={{
-                  backgroundColor: "#ff3b30",
-                  width: 24,
-                  height: 24,
-                  borderRadius: 12,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginLeft: 10,
-                }}
+                style={styles.closeButton}
+                onPress={() => setShowAddMealModal(false)}
               >
-                <Text
-                  style={{ color: "white", fontWeight: "bold", fontSize: 14 }}
-                >
-                  X
-                </Text>
+                <Ionicons name="close" size={28} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-          </View>
-        ))}
-      {/* Barcode Scanner Modal */}
 
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Meal Name */}
+              <View style={styles.formSection}>
+                <Text style={styles.label}>Meal Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., Breakfast Bowl"
+                  placeholderTextColor={colors.textTertiary}
+                  value={mealName}
+                  onChangeText={setMealName}
+                />
+              </View>
+
+              {/* Meal Type */}
+              <View style={styles.formSection}>
+                <Text style={styles.label}>Meal Type</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="breakfast, lunch, dinner, snack"
+                  placeholderTextColor={colors.textTertiary}
+                  value={mealType}
+                  onChangeText={setMealType}
+                />
+              </View>
+
+              {/* Food Item Section */}
+              <View style={styles.formSection}>
+                <Text
+                  style={{
+                    fontSize: fontSize.lg,
+                    fontWeight: fontWeight.bold,
+                    color: colors.text,
+                    marginBottom: spacing.md,
+                  }}
+                >
+                  Food Item {foodItemCount + 1}
+                </Text>
+
+                {/* Scan Barcode Button */}
+                <TouchableOpacity
+                  style={styles.scanButton}
+                  onPress={() => setShowScanner(true)}
+                >
+                  <Ionicons name="scan" size={20} color={colors.pastelGreenText} />
+                  <Text style={styles.scanButtonText}>Scan Barcode</Text>
+                </TouchableOpacity>
+
+                {/* Food Name */}
+                <View style={styles.formSection}>
+                  <Text style={styles.label}>Food Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Food Name"
+                    placeholderTextColor={colors.textTertiary}
+                    value={currentFoodItem.foodName.toString()}
+                    onChangeText={(text) => handleInputChange("foodName", text)}
+                  />
+                </View>
+
+                {/* Calories */}
+                <View style={styles.formSection}>
+                  <Text style={styles.label}>Calories</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Calories"
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="numeric"
+                    value={currentFoodItem.calories?.toString()}
+                    onChangeText={(text) => handleInputChange("calories", text)}
+                  />
+                </View>
+
+                {/* Sugar */}
+                <View style={styles.formSection}>
+                  <Text style={styles.label}>Sugar (g)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Sugar (g)"
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="numeric"
+                    value={currentFoodItem.sugar?.toString()}
+                    onChangeText={(text) => handleInputChange("sugar", text)}
+                  />
+                </View>
+
+                {/* Carbs */}
+                <View style={styles.formSection}>
+                  <Text style={styles.label}>Carbs (mg)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Carbs (mg)"
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="numeric"
+                    value={currentFoodItem.carbs?.toString()}
+                    onChangeText={(text) => handleInputChange("carbs", text)}
+                  />
+                </View>
+
+                {/* Fat */}
+                <View style={styles.formSection}>
+                  <Text style={styles.label}>Fat (g)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Fat (g)"
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="numeric"
+                    value={currentFoodItem.fat?.toString()}
+                    onChangeText={(text) => handleInputChange("fat", text)}
+                  />
+                </View>
+
+                {/* Protein */}
+                <View style={styles.formSection}>
+                  <Text style={styles.label}>Protein (g)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Protein (g)"
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="numeric"
+                    value={currentFoodItem.protein?.toString()}
+                    onChangeText={(text) => handleInputChange("protein", text)}
+                  />
+                </View>
+
+                {/* Add Item Button */}
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  onPress={handleAddItem}
+                >
+                  <Ionicons name="add-circle" size={20} color={colors.text} />
+                  <Text style={styles.secondaryButtonText}>
+                    Add Item to Meal
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Submit Meal Button */}
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleSubmitMeal}
+              >
+                <Ionicons name="checkmark-circle" size={24} color={colors.pastelGreenText} />
+                <Text style={styles.submitButtonText}>
+                  Submit Meal
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Barcode Scanner Modal */}
       <BarcodeScanner
         visible={showScanner}
         onClose={() => setShowScanner(false)}
         onProductScanned={handleProductScanned}
       />
-    </ScrollView>
+    </View>
   );
 }
