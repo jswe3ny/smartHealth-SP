@@ -29,9 +29,6 @@ export default function OnboardingLayout() {
           )
         }}
       />
-      <Stack.Screen name="home" />
-      <Stack.Screen name="foodJournal" />
-      <Stack.Screen name="barcodeScanner" />
     </Stack>
   );
 }
