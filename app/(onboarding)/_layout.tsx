@@ -7,8 +7,7 @@ export default function OnboardingLayout() {
   const { profile, isLoading: profileLoading } = useUserInfo();
 
   if (authLoading || profileLoading) return null;
-  if (!currentUser) return <Redirect href="/login" />;
-  if (profile?.onboardingComplete) return <Redirect href="/home" />;
+  if (!currentUser) return <Redirect href="/(auth)" />;
 
   return <Stack />;
 }

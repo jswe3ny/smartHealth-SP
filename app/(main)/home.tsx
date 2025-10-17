@@ -57,6 +57,17 @@ export default function Home() {
             size="lg"
             bg="#505050ff"
           />
+
+          <Button
+            title="Onboarding"
+            onPress={() => {
+              router.push("/(onboarding)/onboarding");
+            }}
+            size="lg"
+            bg="#10B981"
+          />
+
+          
         </View>
       </ScrollView>
     </SafeAreaView>
