@@ -60,6 +60,15 @@ export default function Home() {
             bg={colors.pastelGreen}
             color={colors.pastelGreenText}
           />
+
+          <Button
+            title="Health Tracking"
+            onPress={() => {
+              router.push("./healthTracking");
+            }}
+            size="lg"
+            bg="#000000"
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

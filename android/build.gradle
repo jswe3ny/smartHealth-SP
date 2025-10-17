@@ -1,6 +1,13 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
+  ext {
+    minSdkVersion = 26              // Added this for health connect
+    compileSdkVersion = 35          
+    targetSdkVersion = 34           
+    buildToolsVersion = "34.0.0"    
+    ndkVersion = "26.1.10909125"    
+  }
   repositories {
     google()
     mavenCentral()

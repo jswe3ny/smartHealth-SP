@@ -16,6 +16,7 @@ export default function AppLayout() {
       <Stack screenOptions={{ headerShown: true }}>
         <Stack.Screen name="home" />
         <Stack.Screen name="foodJournal" />
+        <Stack.Screen name="healthTracking" />
       </Stack>
     </SafeAreaView>
   );
