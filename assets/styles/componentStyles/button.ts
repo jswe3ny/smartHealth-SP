@@ -26,7 +26,7 @@ type ButtonOpts = {
 export function makeButtonStyles(opts: ButtonOpts = {}) {
   const {
     bg = colors.primary,
-    color = colors.white,
+    color = "#FFFFFF", // Feel free to change anytime, colors.white was deleted and this was throwing error.
     size = "md",
     radius: r = radius.md,
     disabled = false,
