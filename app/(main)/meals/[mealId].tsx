@@ -1,6 +1,5 @@
 // This is the full code for app/meals/[mealId].tsx
 
-import { colors } from "@/assets/styles";
 import { Button } from "@/components/button";
 import { deleteMealByID, getMealDetailsById } from "@/utils/foodjournal.repo";
 import { MealDetails } from "@/utils/types/foodJournal.types";
@@ -70,7 +69,7 @@ export default function MealDetailScreen() {
       <Button
         style={{ width: 60, marginLeft: "auto" }}
         title="X"
-        bg={colors.black}
+        bg={"#000000"} // Feel gree to change at any point, colors.black was deleted so hardcoded this.
         onPress={() => {
           deleteMealByID(mealId);
           router.back();

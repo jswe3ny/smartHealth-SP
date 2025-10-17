@@ -7,10 +7,11 @@ import { TouchableOpacity } from "react-native";
 
 export default function OnboardingLayout() {
   const { currentUser, isLoading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading } = useUserInfo();
+  const { isLoading: profileLoading } = useUserInfo();
 
   if (authLoading || profileLoading) return null;
-  if (!currentUser) return <Redirect href="/(auth)" />;
+  if (!currentUser) return <Redirect href="/auth" />;
+
 
   return (
     <Stack screenOptions={{ headerShown: true }}>
