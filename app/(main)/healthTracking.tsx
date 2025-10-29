@@ -278,7 +278,9 @@ export default function HealthTracking() {
         <View style={styles.sectionHeader}>
           <View>
             <Text style={styles.sectionTitle}>My Daily Goals</Text>
-            <Text style={styles.sectionSubtitle}>Track your progress today</Text>
+            <Text style={styles.sectionSubtitle}>
+              Track your progress today
+            </Text>
           </View>
           <TouchableOpacity onPress={() => setShowGoalModal(true)}>
             <Text style={styles.addButton}>+ Add Goal</Text>
@@ -287,7 +289,7 @@ export default function HealthTracking() {
 
         {goals.length === 0 ? (
           <Text style={styles.emptyText}>
-            No goals set. Tap "Add Goal" to create one!
+            No goals set. Tap &quot;Add Goal&quot; to create one!
           </Text>
         ) : (
           goals.map((goal) => {
@@ -296,7 +298,8 @@ export default function HealthTracking() {
               <View key={goal.goalId} style={styles.goalCard}>
                 <View style={styles.goalHeader}>
                   <Text style={styles.goalType}>
-                    {goal.type.charAt(0).toUpperCase() + goal.type.slice(1)} Goal
+                    {goal.type.charAt(0).toUpperCase() + goal.type.slice(1)}{" "}
+                    Goal
                   </Text>
                   <Text style={styles.goalTarget}>
                     Target: {goal.targetValue} {getGoalLabel(goal.type)}
@@ -308,7 +311,9 @@ export default function HealthTracking() {
                   />
                 </View>
                 <View style={styles.goalFooter}>
-                  <Text style={styles.progressText}>{progress.toFixed(0)}% Complete</Text>
+                  <Text style={styles.progressText}>
+                    {progress.toFixed(0)}% Complete
+                  </Text>
                   {progress >= 100 && (
                     <Text style={styles.goalAchieved}>✓ Goal Achieved!</Text>
                   )}
@@ -408,7 +413,9 @@ export default function HealthTracking() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add Daily Goal</Text>
 
-            <Text style={styles.modalLabel}>What do you want to achieve today?</Text>
+            <Text style={styles.modalLabel}>
+              What do you want to achieve today?
+            </Text>
             <View style={styles.goalTypeButtons}>
               {["steps", "distance", "calories", "weight"].map((type) => (
                 <TouchableOpacity
@@ -417,15 +424,12 @@ export default function HealthTracking() {
                     styles.goalTypeButton,
                     newGoal.type === type && styles.goalTypeButtonActive,
                   ]}
-                  onPress={() =>
-                    setNewGoal({ ...newGoal, type: type as any })
-                  }
+                  onPress={() => setNewGoal({ ...newGoal, type: type as any })}
                 >
                   <Text
                     style={[
                       styles.goalTypeButtonText,
-                      newGoal.type === type &&
-                        styles.goalTypeButtonTextActive,
+                      newGoal.type === type && styles.goalTypeButtonTextActive,
                     ]}
                   >
                     {type.charAt(0).toUpperCase() + type.slice(1)}

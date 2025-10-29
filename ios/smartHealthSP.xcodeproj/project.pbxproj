@@ -8,30 +8,30 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		2C28EA214076E91127AB0090 /* Pods_smartHealthSP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B7005271A306C9477AD0DFA3 /* Pods_smartHealthSP.framework */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		98E6D2AAEBBFC1B43DF00059 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812B03631C2B88AF996861FE /* ExpoModulesProvider.swift */; };
-		B29F91C2E50D48ACB95D2344 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 8DDAC6270B52459A8990A019 /* GoogleService-Info.plist */; };
+		594C424E5B0D600399511534 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9115A24F2ACBA8A434CC0964 /* PrivacyInfo.xcprivacy */; };
+		6129349A52C770D7C8C179DB /* Pods_smartHealthSP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F738E442E6ACD74B732D2071 /* Pods_smartHealthSP.framework */; };
+		7C095A75ED76464682C31D32 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81317368E9F248129358A2A0 /* GoogleService-Info.plist */; };
+		8FAD30258E4912D777A9B46C /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67AC31F2B3F419BD828076C /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		CF045E67F5D3976D024D1DFF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 51D41ACC96182EA707444F7C /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0EE32452F75E4BBD3DBB972E /* Pods-smartHealthSP.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-smartHealthSP.release.xcconfig"; path = "Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* smartHealthSP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = smartHealthSP.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = smartHealthSP/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = smartHealthSP/Info.plist; sourceTree = "<group>"; };
-		51D41ACC96182EA707444F7C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = smartHealthSP/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		812B03631C2B88AF996861FE /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-smartHealthSP/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		8DDAC6270B52459A8990A019 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "smartHealthSP/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		50F0FB30F4078E67D04D2A5B /* Pods-smartHealthSP.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-smartHealthSP.release.xcconfig"; path = "Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP.release.xcconfig"; sourceTree = "<group>"; };
+		81317368E9F248129358A2A0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "smartHealthSP/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		9115A24F2ACBA8A434CC0964 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = smartHealthSP/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = smartHealthSP/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B7005271A306C9477AD0DFA3 /* Pods_smartHealthSP.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_smartHealthSP.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		D2DFA5303F1694F5113D9301 /* Pods-smartHealthSP.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-smartHealthSP.debug.xcconfig"; path = "Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP.debug.xcconfig"; sourceTree = "<group>"; };
+		DB6C7144C2FF27F9A10715A7 /* Pods-smartHealthSP.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-smartHealthSP.debug.xcconfig"; path = "Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP.debug.xcconfig"; sourceTree = "<group>"; };
+		E67AC31F2B3F419BD828076C /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-smartHealthSP/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = smartHealthSP/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* smartHealthSP-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "smartHealthSP-Bridging-Header.h"; path = "smartHealthSP/smartHealthSP-Bridging-Header.h"; sourceTree = "<group>"; };
+		F738E442E6ACD74B732D2071 /* Pods_smartHealthSP.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_smartHealthSP.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2C28EA214076E91127AB0090 /* Pods_smartHealthSP.framework in Frameworks */,
+				6129349A52C770D7C8C179DB /* Pods_smartHealthSP.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,8 +55,8 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				8DDAC6270B52459A8990A019 /* GoogleService-Info.plist */,
-				51D41ACC96182EA707444F7C /* PrivacyInfo.xcprivacy */,
+				81317368E9F248129358A2A0 /* GoogleService-Info.plist */,
+				9115A24F2ACBA8A434CC0964 /* PrivacyInfo.xcprivacy */,
 			);
 			name = smartHealthSP;
 			sourceTree = "<group>";
@@ -65,27 +65,25 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				B7005271A306C9477AD0DFA3 /* Pods_smartHealthSP.framework */,
+				F738E442E6ACD74B732D2071 /* Pods_smartHealthSP.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		392E7B7FF1FB13601DEBFA6A /* smartHealthSP */ = {
+		4A9AE8087D61ED060FE8E4B6 /* smartHealthSP */ = {
 			isa = PBXGroup;
 			children = (
-				812B03631C2B88AF996861FE /* ExpoModulesProvider.swift */,
+				E67AC31F2B3F419BD828076C /* ExpoModulesProvider.swift */,
 			);
 			name = smartHealthSP;
 			sourceTree = "<group>";
 		};
-		71F55A229615A0A03EA0AC86 /* Pods */ = {
+		6758304D2D0C0DED96FB1CC2 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				D2DFA5303F1694F5113D9301 /* Pods-smartHealthSP.debug.xcconfig */,
-				0EE32452F75E4BBD3DBB972E /* Pods-smartHealthSP.release.xcconfig */,
+				4A9AE8087D61ED060FE8E4B6 /* smartHealthSP */,
 			);
-			name = Pods;
-			path = Pods;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -102,8 +100,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				71F55A229615A0A03EA0AC86 /* Pods */,
-				B0E118355178A59D9BB8BE99 /* ExpoModulesProviders */,
+				8F186E90495C2D48AE443C65 /* Pods */,
+				6758304D2D0C0DED96FB1CC2 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -118,12 +116,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B0E118355178A59D9BB8BE99 /* ExpoModulesProviders */ = {
+		8F186E90495C2D48AE443C65 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				392E7B7FF1FB13601DEBFA6A /* smartHealthSP */,
+				DB6C7144C2FF27F9A10715A7 /* Pods-smartHealthSP.debug.xcconfig */,
+				50F0FB30F4078E67D04D2A5B /* Pods-smartHealthSP.release.xcconfig */,
 			);
-			name = ExpoModulesProviders;
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -143,14 +143,14 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "smartHealthSP" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				5C9F7C86925CAD3A56E6ED28 /* [Expo] Configure project */,
+				5846C3CF84A032DEDC44922E /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				B1B966DA5A197EE38AF6DEE1 /* [CP] Embed Pods Frameworks */,
-				60F607984F74118FE277755D /* [CP-User] [RNFB] Core Configuration */,
+				1F84B16755367D6B40226A81 /* [CP] Embed Pods Frameworks */,
+				6490FA28D81B3602777A85EF /* [CP-User] [RNFB] Core Configuration */,
 			);
 			buildRules = (
 			);
@@ -170,8 +170,8 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = BM34A8RJM7;
 						LastSwiftMigration = 1250;
+						DevelopmentTeam = "BM34A8RJM7";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -202,8 +202,8 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				B29F91C2E50D48ACB95D2344 /* GoogleService-Info.plist in Resources */,
-				CF045E67F5D3976D024D1DFF /* PrivacyInfo.xcprivacy in Resources */,
+				7C095A75ED76464682C31D32 /* GoogleService-Info.plist in Resources */,
+				594C424E5B0D600399511534 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,7 +247,25 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		5C9F7C86925CAD3A56E6ED28 /* [Expo] Configure project */ = {
+		1F84B16755367D6B40226A81 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		5846C3CF84A032DEDC44922E /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -266,7 +284,7 @@
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-smartHealthSP/expo-configure-project.sh\"\n";
 		};
-		60F607984F74118FE277755D /* [CP-User] [RNFB] Core Configuration */ = {
+		6490FA28D81B3602777A85EF /* [CP-User] [RNFB] Core Configuration */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -349,24 +367,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		B1B966DA5A197EE38AF6DEE1 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-smartHealthSP/Pods-smartHealthSP-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -375,7 +375,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				98E6D2AAEBBFC1B43DF00059 /* ExpoModulesProvider.swift in Sources */,
+				8FAD30258E4912D777A9B46C /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -384,15 +384,12 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D2DFA5303F1694F5113D9301 /* Pods-smartHealthSP.debug.xcconfig */;
+			baseConfigurationReference = DB6C7144C2FF27F9A10715A7 /* Pods-smartHealthSP.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = smartHealthSP/smartHealthSP.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BM34A8RJM7;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -418,20 +415,20 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "BM34A8RJM7";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 0EE32452F75E4BBD3DBB972E /* Pods-smartHealthSP.release.xcconfig */;
+			baseConfigurationReference = 50F0FB30F4078E67D04D2A5B /* Pods-smartHealthSP.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = smartHealthSP/smartHealthSP.entitlements;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BM34A8RJM7;
 				INFOPLIST_FILE = smartHealthSP/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -451,6 +448,9 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "BM34A8RJM7";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Release;
 		};

@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "smarthealthsp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -69,7 +69,8 @@
             "READ_WEIGHT"
           ]
         }
-      ]
+      ], 
+      "./plugins/withPodfileFix" // force old arch change for ios
     ],
     "experiments": {
       "typedRoutes": true
