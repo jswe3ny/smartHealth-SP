@@ -6,10 +6,9 @@ export default function AuthLayout() {
   if (isLoading) return null; // root splash still up
   if (currentUser) return <Redirect href="/home" />;
   return (
-    <Stack screenOptions={{ headerShown: true }}>
-      <Stack.Screen name="createAccount" />
-      <Stack.Screen name="login" />
+    <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" options={{ animation: "none" }} />
+      <Stack.Screen name="auth" />
     </Stack>
   );
 }

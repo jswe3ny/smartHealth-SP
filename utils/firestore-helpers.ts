@@ -2,6 +2,8 @@ import {
   collection,
   doc,
   FirebaseFirestoreTypes,
+  getDoc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -10,6 +12,7 @@ import {
   setDoc,
   startAfter,
   where,
+  writeBatch,
 } from "@react-native-firebase/firestore";
 import { db } from "./firebase";
 
@@ -38,15 +41,16 @@ export interface QueryOptions {
   limit?: number;
   startAfter?: unknown; // doc snapshot or field value such as timestamp
 }
-
+// For REALTIME Udates
 export const listenCollection = <T>(
-  path: "string",
+  path: string,
   options: QueryOptions,
   onNext: (val: DocWithId<T>[]) => void,
   onError?: (err: unknown) => void
 ) => {
   const constraints: any[] = [];
 
+  // query option builder
   if (options.where) {
     options.where.forEach((w) =>
       constraints.push(where(w.field, w.op, w.value))
@@ -62,8 +66,7 @@ export const listenCollection = <T>(
     constraints.push(startAfter(options.startAfter));
   }
 
-  // The `query()` function is designed to accept this array of constraints.
-  const finalQuery = query(collectionRef, ...constraints);
+  const finalQuery = query(collectionRef(path), ...constraints);
 
   // listens to the query for new docs.
   const unsubscribe = onSnapshot(
@@ -99,6 +102,57 @@ export const listenDocWithId = <T>(
   );
 };
 
+// FoR Reglar queries
+export const getCollection = async <T>(
+  path: string,
+  options: QueryOptions
+): Promise<DocWithId<T>[]> => {
+  const getCollectionRef = collectionRef(path);
+  const constraints: any[] = []; // Using any[] to handle the library's type inconsistencies
+
+  // This logic is identical to your listenCollection, which is good!
+  if (options.where) {
+    options.where.forEach((w) =>
+      constraints.push(where(w.field, w.op, w.value))
+    );
+  }
+  if (options.orderBy) {
+    options.orderBy.forEach((o) => constraints.push(orderBy(o.field, o.dir)));
+  }
+  if (options.limit) {
+    constraints.push(limit(options.limit));
+  }
+  // ...and so on for other options...
+
+  const q = query(getCollectionRef, ...constraints);
+
+  // The key difference: use `getDocs` for a one-time fetch.
+  const snapshot = await getDocs(q);
+
+  // Map the results into your standard format.
+  return snapshot.docs.map((doc: any) => ({
+    id: doc.id,
+    data: doc.data() as T,
+  }));
+};
+
+export const getDocWithId = async <T>(
+  path: string
+): Promise<DocWithId<T> | null> => {
+  const snapshot = await getDoc(docRef(path));
+
+  if (!snapshot.exists()) {
+    // It's good practice to return null if the document isn't found.
+    return null;
+  }
+
+  return {
+    id: snapshot.id,
+    data: snapshot.data() as T,
+  };
+};
+// export const getDocWithId = async <T>(path:sting): Promise<
+
 export const upsert = <T extends object>(path: string, data: Partial<T>) => {
   return setDoc(docRef(path), data as any, { merge: true });
 };
@@ -133,4 +187,26 @@ export const removeObjectfFromArray = async (
     console.log("Error: Object Not RemovedL: ", error);
     throw error;
   }
+};
+
+export const deleteDocAndSubcollection = async (
+  collectionPath: string,
+  docId: string,
+  subcollectionName: string
+) => {
+  const subcollectionPath = `${collectionPath}/${docId}/${subcollectionName}`;
+  const subcollectionRef = collection(db, subcollectionPath);
+
+  const snapshot = await getDocs(subcollectionRef);
+
+  const batch = writeBatch(db);
+
+  snapshot.docs.forEach((doc: any) => {
+    batch.delete(doc.ref);
+  });
+
+  const parentDocRef = doc(db, collectionPath, docId);
+  batch.delete(parentDocRef);
+
+  await batch.commit();
 };
