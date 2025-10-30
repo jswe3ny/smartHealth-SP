@@ -12,7 +12,16 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "com.anonymous.smartHealth-SP",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app uses the camera to scan product barcodes."
+        "NSCameraUsageDescription": "This app uses the camera to scan product barcodes.",
+        // health and fitness permissions
+        "NSHealthShareUsageDescription": "This app needs to read your health data (like steps, distance, calories, and body mass) to track your fitness progress.",
+        "NSHealthUpdateUsageDescription": "This app needs your permission to potentially save health data like workouts or nutrition logs in the future."
+      },
+      "plugins": [
+        "react-native-health"
+      ],
+      "entitlements": {
+        "com.apple.developer.healthkit": true
       }
     },
     "android": {

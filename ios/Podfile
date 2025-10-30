@@ -8,6 +8,7 @@ ENV['RCT_NEW_ARCH_ENABLED'] = '0' if podfile_properties['newArchEnabled'] == 'fa
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
+require_relative '../node_modules/react-native/scripts/react_native_pods'
 install! 'cocoapods',
   :deterministic_uuids => false
 
