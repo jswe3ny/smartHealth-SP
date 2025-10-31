@@ -6,13 +6,22 @@
     "orientation": "portrait",
     "scheme": "smarthealthsp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "com.anonymous.smartHealth-SP",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app uses the camera to scan product barcodes."
+        "NSCameraUsageDescription": "This app uses the camera to scan product barcodes.",
+        // health and fitness permissions
+        "NSHealthShareUsageDescription": "This app needs to read your health data (like steps, distance, calories, and body mass) to track your fitness progress.",
+        "NSHealthUpdateUsageDescription": "This app needs your permission to potentially save health data like workouts or nutrition logs in the future."
+      },
+      "plugins": [
+        "react-native-health"
+      ],
+      "entitlements": {
+        "com.apple.developer.healthkit": true
       }
     },
     "android": {
@@ -22,13 +31,15 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static"
     },
-    "icon": "./assets/images/react-logo@2x.png", 
+    "icon": "./assets/images/react-logo@2x.png",
     "plugins": [
       "expo-router",
       [
@@ -55,9 +66,21 @@
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan barcodes."
         }
-      ]
+      ],
+      [
+        "react-native-health-connect",
+        {
+          "permissions": [
+            "READ_STEPS",
+            "READ_DISTANCE",
+            "READ_TOTAL_CALORIES_BURNED",
+            "READ_ACTIVE_CALORIES_BURNED",
+            "READ_WEIGHT"
+          ]
+        }
+      ], 
+      "./plugins/withPodfileFix" // force old arch change for ios
     ],
-    
     "experiments": {
       "typedRoutes": true
     },
