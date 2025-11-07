@@ -1,14 +1,34 @@
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
-import { Redirect, Stack } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Redirect, Stack, router } from "expo-router";
+import { TouchableOpacity } from "react-native";
+
 
 export default function OnboardingLayout() {
   const { currentUser, isLoading: authLoading } = useAuth();
-  const { profile, isLoading: profileLoading } = useUserInfo();
+  const { isLoading: profileLoading } = useUserInfo();
 
   if (authLoading || profileLoading) return null;
   if (!currentUser) return <Redirect href="/auth" />;
-  if (profile?.onboardingComplete) return <Redirect href="/home" />;
 
-  return <Stack />;
+
+  return (
+    <Stack screenOptions={{ headerShown: true }}>
+      <Stack.Screen 
+        name="onboarding" 
+        options={{
+          title: "Onboarding",
+          headerLeft: () => (
+            <TouchableOpacity 
+              onPress={() => router.push("/(main)/home")}
+              style={{ padding: 8 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#333" />
+            </TouchableOpacity>
+          )
+        }}
+      />
+    </Stack>
+  );
 }
