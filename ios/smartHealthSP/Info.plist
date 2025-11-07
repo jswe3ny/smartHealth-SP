@@ -53,6 +53,10 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your camera to scan barcodes.</string>
+    <key>NSHealthShareUsageDescription</key>
+    <string>This app needs to read your health data (like steps, distance, calories, and body mass) to track your fitness progress.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>This app needs your permission to potentially save health data like workouts or nutrition logs in the future.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSUserActivityTypes</key>
