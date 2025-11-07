@@ -61,7 +61,7 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
   // adding a prohibited ingredient
   if (updates.prohibitedIngredient) {
     const prohibitedIngredientId =
-      updates.prohibitedIngredient.ingredientId ?? genId();
+      updates.prohibitedIngredient.prohibitedIngredientId ?? genId();
     const ingredient = {
       prohibitedIngredientId,
       name: updates.prohibitedIngredient.name,
@@ -113,3 +113,5 @@ export const deleteGoal = async (
     console.log("error: " + error);
   }
 };
+
+export const getProhibitedIngredients = async () => {};

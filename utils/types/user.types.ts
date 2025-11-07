@@ -9,7 +9,7 @@ export type Goal = {
 };
 
 export type ProhibitedIngredient = {
-  ingredientId?: string;
+  prohibitedIngredientId?: string;
   name: string;
   reason: string;
   severity: number;
