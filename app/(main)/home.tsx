@@ -60,17 +60,6 @@ export default function Home() {
             bg={colors.pastelGreen}
             color={colors.pastelGreenText}
           />
-
-          <Button
-            title="Onboarding"
-            onPress={() => {
-              router.push("/(onboarding)/onboarding");
-            }}
-            size="lg"
-            bg={colors.pastelGreen}
-            color={colors.pastelGreenText}
-          />
-
           
         </View>
       </ScrollView>
