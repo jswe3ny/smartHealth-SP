@@ -135,6 +135,35 @@ export const saveHealthGoal = async (
   }
 };
 
+// Update an existing health goal
+export const updateHealthGoal = async (
+  uid: string,
+  goalId: string,
+  updates: Partial<Pick<HealthGoal, "targetValue" | "isActive">>
+): Promise<void> => {
+  try {
+    await upsert(healthGoalPath(uid, goalId), updates);
+  } catch (error) {
+    console.error("Error updating health goal:", error);
+    throw error;
+  }
+};
+
+// Delete a health goal 
+export const deleteHealthGoal = async (
+  uid: string,
+  goalId: string
+): Promise<void> => {
+  try {
+    await upsert(healthGoalPath(uid, goalId), {
+      isActive: false,
+    });
+  } catch (error) {
+    console.error("Error deleting health goal:", error);
+    throw error;
+  }
+};
+
 // Get active health goals
 export const getActiveHealthGoals = async (
   uid: string
