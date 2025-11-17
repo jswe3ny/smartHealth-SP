@@ -69,6 +69,16 @@ export default function Home() {
             size="lg"
             bg="#000000"
           />
+
+          <Button
+            title="Profile"
+            onPress={() => {
+              router.push("./profile");
+            }}
+            size="lg"
+            bg={colors.pastelGreen}
+            color={colors.pastelGreenText}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
