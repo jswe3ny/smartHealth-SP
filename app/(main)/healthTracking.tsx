@@ -553,7 +553,7 @@ export default function HealthTracking() {
           }}
         >
           <Text style={styles.heightValue}>
-            {Math.floor(userHeight / 12)}' {userHeight % 12}"
+            {Math.floor(userHeight / 12)}&apos; {userHeight % 12}&quot;
           </Text>
           <Text style={styles.heightLabel}>
             ({userHeight} inches total)
