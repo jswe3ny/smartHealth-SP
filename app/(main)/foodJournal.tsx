@@ -23,6 +23,7 @@ import {
 } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { addMeal, getRecentMealSummaries } from "@/utils/foodjournal.repo";
+import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import {
   FoodItem,
   MealSummary,
@@ -55,7 +56,7 @@ export default function FoodJournal() {
 
   const [mealSummary, setMealSummary] = useState<MealSummary[]>([]);
 
-  // Real-time meal updates from team's version
+  // Real-time meal updates
   useEffect(() => {
     if (!currentUser?.uid) return;
 
@@ -192,6 +193,14 @@ export default function FoodJournal() {
     const uid = currentUser?.uid;
     try {
       const temp = await addMeal(mealName, mealType, uid, foodItems);
+
+      // Update daily nutrition data
+      try {
+        await calculateDailyNutritionFromMeals(uid, new Date());
+      } catch (nutritionError) {
+        console.error("Error updating nutrition data:", nutritionError);
+      }
+
       setFoodItems([]);
       setMealName("");
       setMealType("breakfast");

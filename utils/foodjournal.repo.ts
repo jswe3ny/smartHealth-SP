@@ -19,6 +19,8 @@ import {
   MealSummary,
 } from "./types/foodJournal.types";
 
+import { calculateDailyNutritionFromMeals } from "./nutrition.repo";
+
 const parseNumericString = (value: any): number | null => {
   // Handle empty, null, or undefined values first.
   if (value == null || value === "") {
@@ -95,6 +97,13 @@ export const addMeal = async (
     });
     await batch.commit();
 
+    // Auto-update daily nutrition data after meal is added
+    try {
+      await calculateDailyNutritionFromMeals(uid, new Date());
+    } catch (nutritionError) {
+      console.error("Error updating nutrition data:", nutritionError);
+    }
+
     return mealRef.id;
   } catch (error) {
     console.error("Error adding meal with items:", error);
@@ -169,10 +178,21 @@ export const getMealDetailsById = async (
 
 export const deleteMealByID = async (mealId: string) => {
   try {
+    // Get meal data to find which date to update
+    const mealDetails = await getMealDetailsById(mealId);
+  
     await deleteDocAndSubcollection("meal", mealId, "foodItems");
+    // Update nutrition data after meal deletion
+    if (mealDetails) {
+      try {
+        const mealDate = mealDetails.mealTime.toDate();
+        await calculateDailyNutritionFromMeals(mealDetails.uid, mealDate);
+      } catch (nutritionError) {
+        console.error("Error updating nutrition data after deletion:", nutritionError);
+      }
+    }
   } catch (err) {
     console.error(`Error deleting meal ${mealId}:`, err);
-    // Re-throw the error so the UI can handle it (e.g., show an error message).
     throw new Error("Failed to delete meal.");
   }
 };

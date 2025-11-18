@@ -17,6 +17,8 @@ export default function AppLayout() {
         <Stack.Screen name="home" />
         <Stack.Screen name="foodJournal" />
         <Stack.Screen name="healthTracking" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="nutritionTracking" />
       </Stack>
     </SafeAreaView>
   );

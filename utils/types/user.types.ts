@@ -2,10 +2,18 @@ import { Timestamp } from "@react-native-firebase/firestore";
 
 export type Goal = {
   goalId?: string;
+  name: string;
   description: string;
   endDate: Timestamp;
   startDate?: Timestamp;
-  name: string;
+  // Goal type - health, nutrition, or general
+  type?: 'steps' | 'distance' | 'calories' | 'activeMinutes' | 'weight'  // Health goals
+       | 'protein' | 'carbs' | 'fat' | 'totalCalories' | 'water' | 'fiber' | 'sugar'  // Nutrition goals
+       | 'general';
+  // Numeric target for health/nutrition goals
+  targetValue?: number;
+  currentValue?: number;
+  category?: 'health' | 'nutrition' | 'general';
 };
 
 export type ProhibitedIngredient = {
