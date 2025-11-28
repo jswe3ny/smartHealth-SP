@@ -25,20 +25,34 @@ export default function Home() {
             <Text style={styles.brandSubtitle}>Your wellness companion</Text>
           </View>
         </View>
-        <Button title="Sign Out" onPress={accountSignOut} size="sm" bg="#0EA5E9" />
+        <Button
+          title="Sign Out"
+          onPress={accountSignOut}
+          size="sm"
+          bg="#0EA5E9"
+        />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.welcomeCard}>
-          <AppLogo size={72} style={{ alignSelf: 'center', marginBottom: 12 }} />
+          <AppLogo
+            size={72}
+            style={{ alignSelf: "center", marginBottom: 12 }}
+          />
           <Text style={styles.welcomeTitle}>Welcome to Smart Health</Text>
           <Text style={styles.welcomeSubtitle}>
-            Track your nutrition, monitor fitness goals, and connect with health experts.
-            Start your wellness journey today!
+            Track your nutrition, monitor fitness goals, and connect with health
+            experts. Start your wellness journey today!
           </Text>
         </View>
 
-        <GoalContainer goals={userData.profile?.currentGoals} id={currentUser?.uid} />
+        <GoalContainer
+          goals={userData.profile?.currentGoals}
+          id={currentUser?.uid}
+        />
 
         <View style={styles.actionsColumn}>
           <Button
@@ -65,6 +79,14 @@ export default function Home() {
             title="Health Tracking"
             onPress={() => {
               router.push("./healthTracking");
+            }}
+            size="lg"
+            bg="#000000"
+          />
+          <Button
+            title="Blog Section"
+            onPress={() => {
+              router.push("./blog/feed");
             }}
             size="lg"
             bg="#000000"

@@ -1,4 +1,5 @@
 import {
+  addDoc,
   collection,
   doc,
   FirebaseFirestoreTypes,
@@ -209,4 +210,8 @@ export const deleteDocAndSubcollection = async (
   batch.delete(parentDocRef);
 
   await batch.commit();
+};
+
+export const add = <T extends object>(path: string, data: T) => {
+  return addDoc(collection(db, path), data as any);
 };
