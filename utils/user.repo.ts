@@ -5,7 +5,8 @@ import {
   upsert,
 } from "@/utils/firestore-helpers";
 // import { UserProfileRaw, type UserData } from "@/utils/schemas/user";
-import { arrayUnion, Timestamp } from "@react-native-firebase/firestore";
+import { arrayUnion, collection, deleteDoc, doc, getDocs, Timestamp, writeBatch } from "@react-native-firebase/firestore";
+import { db } from "./firebase";
 
 import { UserDoc, UserUpdates } from "./types/user.types";
 
@@ -133,6 +134,63 @@ export const deleteProhibitedIngredient = async (
     );
   } catch (error) {
     console.log("error: " + error);
+    throw error;
+  }
+};
+
+// Delete all user data from Firestore
+export const deleteUserData = async (uid: string) => {
+  try {
+    // Delete health data subcollection
+    const healthDataRef = collection(db, `${userPath(uid)}/healthData`);
+    const healthDataSnapshot = await getDocs(healthDataRef);
+    const batch1 = writeBatch(db);
+    healthDataSnapshot.docs.forEach((docSnap: any) => {
+      batch1.delete(docSnap.ref);
+    });
+    if (healthDataSnapshot.docs.length > 0) {
+      await batch1.commit();
+    }
+
+    // Delete health goals subcollection
+    const healthGoalsRef = collection(db, `${userPath(uid)}/healthGoals`);
+    const healthGoalsSnapshot = await getDocs(healthGoalsRef);
+    const batch2 = writeBatch(db);
+    healthGoalsSnapshot.docs.forEach((docSnap: any) => {
+      batch2.delete(docSnap.ref);
+    });
+    if (healthGoalsSnapshot.docs.length > 0) {
+      await batch2.commit();
+    }
+
+    // Delete all meals (meals are in a separate collection, use uid field)
+    const mealsRef = collection(db, "meal");
+    const mealsSnapshot = await getDocs(mealsRef);
+    
+    // Delete meal subcollections (foodItems) and meals
+    const batch3 = writeBatch(db);
+    let hasMeals = false;
+    for (const mealDoc of mealsSnapshot.docs) {
+      const mealData = mealDoc.data();
+      if (mealData.uid === uid) {
+        hasMeals = true;
+        const foodItemsRef = collection(db, `meal/${mealDoc.id}/foodItems`);
+        const foodItemsSnapshot = await getDocs(foodItemsRef);
+        foodItemsSnapshot.docs.forEach((foodItemDoc: any) => {
+          batch3.delete(foodItemDoc.ref);
+        });
+        batch3.delete(mealDoc.ref);
+      }
+    }
+    if (hasMeals) {
+      await batch3.commit();
+    }
+
+    // Delete user document (do this last)
+    const userDocRef = doc(db, userPath(uid));
+    await deleteDoc(userDocRef);
+  } catch (error) {
+    console.error("Error deleting user data:", error);
     throw error;
   }
 };

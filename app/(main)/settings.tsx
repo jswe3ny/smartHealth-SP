@@ -6,7 +6,9 @@ import {
   useThemeColors,
 } from "@/assets/styles";
 import { useAuth } from "@/contexts/authContext";
+import { deleteUserData } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
+import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from "@react-native-firebase/auth";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -20,10 +22,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getAuth, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "@react-native-firebase/auth";
 
 export default function Settings() {
-  const { currentUser } = useAuth();
+  const { currentUser, accountSignOut } = useAuth();
   const colors = useThemeColors();
 
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -35,6 +36,12 @@ export default function Settings() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Delete account state
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!currentUser) return null;
 
@@ -105,6 +112,87 @@ export default function Settings() {
       
       Alert.alert("Error", errorMessage);
     }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      Alert.alert("Error", "Please enter your password to confirm account deletion");
+      return;
+    }
+
+    if (!currentUser || !currentUser.email) {
+      Alert.alert("Error", "User not found");
+      return;
+    }
+
+    // Final confirmation
+    Alert.alert(
+      "⚠️ Final Confirmation",
+      "This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete My Account",
+          style: "destructive",
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              const auth = getAuth();
+              const user = auth.currentUser;
+
+              if (!user) {
+                Alert.alert("Error", "User not authenticated");
+                setIsDeleting(false);
+                return;
+              }
+
+              // Re-authenticate user with password
+              const credential = EmailAuthProvider.credential(
+                currentUser.email,
+                deletePassword
+              );
+              await reauthenticateWithCredential(user, credential);
+
+              // Delete all user data from Firestore
+              await deleteUserData(currentUser.uid);
+
+              // Delete Firebase Auth account
+              await user.delete();
+
+              // Sign out and redirect
+              await accountSignOut();
+              
+              Alert.alert(
+                "Account Deleted",
+                "Your account and all associated data have been permanently deleted.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      router.replace("/(auth)");
+                    },
+                  },
+                ]
+              );
+            } catch (error: any) {
+              setIsDeleting(false);
+              console.error("Error deleting account:", error);
+              let errorMessage = "Failed to delete account";
+              
+              if (error.code === "auth/wrong-password") {
+                errorMessage = "Password is incorrect";
+              } else if (error.code === "auth/requires-recent-login") {
+                errorMessage = "Please sign out and sign in again before deleting your account";
+              } else if (error.message) {
+                errorMessage = error.message;
+              }
+              
+              Alert.alert("Error", errorMessage);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const styles = StyleSheet.create({
@@ -237,6 +325,9 @@ export default function Settings() {
     modalButtonSaveText: {
       color: colors.pastelGreenText,
     },
+    dangerItem: {
+      borderBottomColor: colors.error + "20",
+    },
   });
 
   return (
@@ -260,6 +351,24 @@ export default function Settings() {
             <View style={styles.settingsItemLeft}>
               <Ionicons name="lock-closed-outline" size={20} color={colors.text} />
               <Text style={styles.settingsItemText}>Change Password</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Danger Zone Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.error }]}>Danger Zone</Text>
+          
+          <TouchableOpacity
+            style={[styles.settingsItem, styles.dangerItem]}
+            onPress={() => setShowDeleteAccountModal(true)}
+          >
+            <View style={styles.settingsItemLeft}>
+              <Ionicons name="trash-outline" size={20} color={colors.error} />
+              <Text style={[styles.settingsItemText, { color: colors.error }]}>
+                Delete Account
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -386,6 +495,108 @@ export default function Settings() {
                 >
                   <Text style={[styles.modalButtonText, styles.modalButtonSaveText]}>
                     Change Password
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account Modal */}
+      <Modal
+        visible={showDeleteAccountModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDeleteAccountModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.error }]}>
+                Delete Account
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  setShowDeleteAccountModal(false);
+                  setDeletePassword("");
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.error, fontSize: fontSize.md }]}>
+                  ⚠️ Warning: This action cannot be undone
+                </Text>
+                <Text style={[styles.label, { fontWeight: fontWeight.regular, marginTop: spacing.sm }]}>
+                  Deleting your account will permanently remove:
+                </Text>
+                <View style={{ marginLeft: spacing.md, marginTop: spacing.xs }}>
+                  <Text style={[styles.label, { fontWeight: fontWeight.regular, fontSize: fontSize.sm }]}>
+                    • Your profile information
+                  </Text>
+                  <Text style={[styles.label, { fontWeight: fontWeight.regular, fontSize: fontSize.sm }]}>
+                    • All your meals and food journal entries
+                  </Text>
+                  <Text style={[styles.label, { fontWeight: fontWeight.regular, fontSize: fontSize.sm }]}>
+                    • Your health tracking data
+                  </Text>
+                  <Text style={[styles.label, { fontWeight: fontWeight.regular, fontSize: fontSize.sm }]}>
+                    • Your goals and preferences
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Enter your password to confirm</Text>
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={deletePassword}
+                    onChangeText={setDeletePassword}
+                    placeholder="Enter your password"
+                    placeholderTextColor={colors.textTertiary}
+                    secureTextEntry={!showDeletePassword}
+                    autoCapitalize="none"
+                    editable={!isDeleting}
+                  />
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={() => setShowDeletePassword(!showDeletePassword)}
+                  >
+                    <Ionicons
+                      name={showDeletePassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowDeleteAccountModal(false);
+                    setDeletePassword("");
+                  }}
+                  disabled={isDeleting}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonCancelText]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: colors.error }]}
+                  onPress={handleDeleteAccount}
+                  disabled={isDeleting}
+                >
+                  <Text style={[styles.modalButtonText, { color: colors.textInverse }]}>
+                    {isDeleting ? "Deleting..." : "Delete Account"}
                   </Text>
                 </TouchableOpacity>
               </View>
