@@ -113,3 +113,22 @@ export const deleteGoal = async (
     console.log("error: " + error);
   }
 };
+
+export const deleteProhibitedIngredient = async (
+  uid: string,
+  arrayName: string,
+  objectIdFieldName: string,
+  objectId: string
+) => {
+  try {
+    await removeObjectfFromArray(
+      userPath(uid),
+      arrayName,
+      objectIdFieldName,
+      objectId
+    );
+  } catch (error) {
+    console.log("error: " + error);
+    throw error;
+  }
+};

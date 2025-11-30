@@ -8,7 +8,7 @@ import {
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
 import { Goal, ProhibitedIngredient } from "@/utils/types/user.types";
-import { deleteGoal, updateUserInfo } from "@/utils/user.repo";
+import { deleteGoal, deleteProhibitedIngredient, updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Timestamp } from "@react-native-firebase/firestore";
@@ -120,14 +120,20 @@ export default function Profile() {
           style: "destructive",
           onPress: async () => {
             try {
-              const currentIngredients =
-                userData.profile?.prohibitedIngredients || [];
-              const updated = currentIngredients.filter(
-                (ing) => ing.ingredientId !== ingredient.ingredientId
+              // Get the actual ID from the ingredient (stored as prohibitedIngredientId in Firestore)
+              const ingredientId = (ingredient as any).prohibitedIngredientId || ingredient.ingredientId;
+              
+              if (!ingredientId) {
+                Alert.alert("Error", "Cannot delete ingredient: missing ID");
+                return;
+              }
+
+              await deleteProhibitedIngredient(
+                currentUser.uid,
+                "prohibitedIngredients",
+                "prohibitedIngredientId",
+                ingredientId
               );
-              await updateUserInfo(currentUser.uid, {
-                prohibitedIngredients: updated,
-              });
               Alert.alert("Success", "Ingredient removed");
             } catch (error) {
               console.error("Error deleting ingredient:", error);
