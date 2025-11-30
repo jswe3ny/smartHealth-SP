@@ -75,6 +75,21 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
 
     return prohibitedIngredientId;
   }
+  // adding a health condition
+  if (updates.healthCondition) {
+    const conditionId = updates.healthCondition.conditionId ?? genId();
+    const condition = {
+      conditionId,
+      name: updates.healthCondition.name,
+      diagnosisDate: updates.healthCondition.diagnosisDate,
+      notes: updates.healthCondition.notes,
+    };
+    await upsert(userPath(uid), {
+      healthConditions: arrayUnion(condition),
+    });
+
+    return conditionId;
+  }
 
   const infoUpdate: Record<string, unknown> = {};
 
@@ -98,6 +113,8 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
     infoUpdate.currentGoals = updates.currentGoals;
   if (updates.prohibitedIngredients !== undefined)
     infoUpdate.prohibitedIngredients = updates.prohibitedIngredients;
+  if (updates.healthConditions !== undefined)
+    infoUpdate.healthConditions = updates.healthConditions;
   await upsert(userPath(uid), infoUpdate);
 
   return;
@@ -122,6 +139,25 @@ export const deleteGoal = async (
 };
 
 export const deleteProhibitedIngredient = async (
+  uid: string,
+  arrayName: string,
+  objectIdFieldName: string,
+  objectId: string
+) => {
+  try {
+    await removeObjectfFromArray(
+      userPath(uid),
+      arrayName,
+      objectIdFieldName,
+      objectId
+    );
+  } catch (error) {
+    console.log("error: " + error);
+    throw error;
+  }
+};
+
+export const deleteHealthCondition = async (
   uid: string,
   arrayName: string,
   objectIdFieldName: string,

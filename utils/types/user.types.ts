@@ -15,6 +15,13 @@ export type ProhibitedIngredient = {
   severity: number;
 };
 
+export type HealthCondition = {
+  conditionId?: string;
+  name: string;
+  diagnosisDate?: Timestamp;
+  notes?: string;
+};
+
 export type PersonalInformation = {
   firstName?: string;
   lastName?: string;
@@ -37,10 +44,12 @@ export type UserDoc = {
   createdAt: Timestamp;
   currentGoals?: Goal[];
   prohibitedIngredients?: ProhibitedIngredient[];
+  healthConditions?: HealthCondition[];
 };
 
 export type UserUpdates = Partial<UserDoc> & {
   goal?: Goal;
   prohibitedIngredient?: ProhibitedIngredient;
+  healthCondition?: HealthCondition;
   personalInformation?: PersonalInformation;
 };

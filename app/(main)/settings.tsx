@@ -7,15 +7,18 @@ import {
 } from "@/assets/styles";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
-import { ActivityLevel } from "@/utils/types/user.types";
-import { deleteUserData, updateUserInfo } from "@/utils/user.repo";
+import { ActivityLevel, HealthCondition } from "@/utils/types/user.types";
+import { deleteHealthCondition, deleteUserData, updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from "@react-native-firebase/auth";
+import { Timestamp } from "@react-native-firebase/firestore";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -48,6 +51,15 @@ export default function Settings() {
 
   // Activity level state
   const [showActivityLevelModal, setShowActivityLevelModal] = useState(false);
+
+  // Health conditions state
+  const [showAddConditionModal, setShowAddConditionModal] = useState(false);
+  const [newCondition, setNewCondition] = useState({
+    name: "",
+    diagnosisDate: new Date(),
+    notes: "",
+  });
+  const [showConditionDatePicker, setShowConditionDatePicker] = useState(false);
 
   if (!currentUser) return null;
 
@@ -90,6 +102,64 @@ export default function Settings() {
       console.error("Error updating activity level:", error);
       Alert.alert("Error", "Failed to update activity level");
     }
+  };
+
+  const handleAddHealthCondition = async () => {
+    if (!newCondition.name.trim()) {
+      Alert.alert("Error", "Please enter a condition name");
+      return;
+    }
+
+    try {
+      await updateUserInfo(currentUser.uid, {
+        healthCondition: {
+          name: newCondition.name.trim(),
+          diagnosisDate: Timestamp.fromDate(newCondition.diagnosisDate),
+          notes: newCondition.notes.trim() || undefined,
+        },
+      });
+      setNewCondition({ name: "", diagnosisDate: new Date(), notes: "" });
+      setShowAddConditionModal(false);
+      Alert.alert("Success", "Health condition added!");
+    } catch (error) {
+      console.error("Error adding health condition:", error);
+      Alert.alert("Error", "Failed to add health condition");
+    }
+  };
+
+  const handleDeleteHealthCondition = (condition: HealthCondition) => {
+    Alert.alert(
+      "Delete Condition",
+      `Are you sure you want to remove "${condition.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const conditionId = (condition as any).conditionId || condition.conditionId;
+              
+              if (!conditionId) {
+                Alert.alert("Error", "Cannot delete condition: missing ID");
+                return;
+              }
+
+              await deleteHealthCondition(
+                currentUser.uid,
+                "healthConditions",
+                "conditionId",
+                conditionId
+              );
+              Alert.alert("Success", "Condition removed");
+            } catch (error) {
+              console.error("Error deleting condition:", error);
+              Alert.alert("Error", "Failed to delete condition");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleChangePassword = async () => {
@@ -411,6 +481,68 @@ export default function Settings() {
     activityLevelDescriptionSelected: {
       color: colors.pastelGreenText + "CC",
     },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing.lg,
+    },
+    addButton: {
+      fontSize: fontSize.md,
+      color: colors.primary,
+      fontWeight: fontWeight.semibold,
+    },
+    emptyText: {
+      textAlign: "center",
+      color: colors.textSecondary,
+      paddingVertical: spacing.xl,
+      fontSize: fontSize.md,
+    },
+    conditionCard: {
+      backgroundColor: colors.backgroundSecondary,
+      padding: spacing.md,
+      borderRadius: radius.md,
+      marginBottom: spacing.sm,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    conditionInfo: {
+      flex: 1,
+    },
+    conditionName: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    conditionDate: {
+      fontSize: fontSize.sm,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    conditionNotes: {
+      fontSize: fontSize.sm,
+      color: colors.textSecondary,
+      fontStyle: "italic",
+    },
+    deleteButton: {
+      padding: spacing.sm,
+    },
+    dateButton: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.backgroundSecondary,
+      padding: spacing.md,
+      borderRadius: radius.md,
+    },
+    dateButtonText: {
+      fontSize: fontSize.md,
+      color: colors.text,
+    },
   });
 
   return (
@@ -442,6 +574,56 @@ export default function Settings() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
+        </View>
+
+        {/* Health Conditions Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Health Conditions</Text>
+            <TouchableOpacity onPress={() => setShowAddConditionModal(true)}>
+              <Text style={styles.addButton}>+ Add</Text>
+            </TouchableOpacity>
+          </View>
+
+          {!userData.profile?.healthConditions ||
+          userData.profile.healthConditions.length === 0 ? (
+            <Text style={styles.emptyText}>
+              No health conditions added yet
+            </Text>
+          ) : (
+            userData.profile.healthConditions.map((condition) => (
+              <View key={condition.conditionId} style={styles.conditionCard}>
+                <View style={styles.conditionInfo}>
+                  <Text style={styles.conditionName}>{condition.name}</Text>
+                  {condition.diagnosisDate && (
+                    <Text style={styles.conditionDate}>
+                      Diagnosed:{" "}
+                      {condition.diagnosisDate
+                        .toDate()
+                        .toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                    </Text>
+                  )}
+                  {condition.notes && (
+                    <Text style={styles.conditionNotes}>{condition.notes}</Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteHealthCondition(condition)}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={20}
+                    color={colors.error}
+                  />
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
         </View>
 
         {/* Account Settings Section */}
@@ -772,6 +954,112 @@ export default function Settings() {
                   )}
                 </TouchableOpacity>
               ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Health Condition Modal */}
+      <Modal
+        visible={showAddConditionModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddConditionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Health Condition</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => {
+                  setShowAddConditionModal(false);
+                  setNewCondition({ name: "", diagnosisDate: new Date(), notes: "" });
+                }}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Condition Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={newCondition.name}
+                  onChangeText={(text) =>
+                    setNewCondition({ ...newCondition, name: text })
+                  }
+                  placeholder="e.g., Diabetes, Hypertension"
+                  placeholderTextColor={colors.textTertiary}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Diagnosis Date</Text>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowConditionDatePicker(true)}
+                >
+                  <Text style={styles.dateButtonText}>
+                    {newCondition.diagnosisDate.toLocaleDateString()}
+                  </Text>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+                {showConditionDatePicker && (
+                  <DateTimePicker
+                    value={newCondition.diagnosisDate}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(event, selectedDate) => {
+                      setShowConditionDatePicker(Platform.OS === "ios");
+                      if (selectedDate)
+                        setNewCondition({ ...newCondition, diagnosisDate: selectedDate });
+                    }}
+                  />
+                )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Notes (Optional)</Text>
+                <TextInput
+                  style={[styles.input, { minHeight: 80 }]}
+                  value={newCondition.notes}
+                  onChangeText={(text) =>
+                    setNewCondition({ ...newCondition, notes: text })
+                  }
+                  placeholder="Additional notes about this condition"
+                  placeholderTextColor={colors.textTertiary}
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonCancel]}
+                  onPress={() => {
+                    setShowAddConditionModal(false);
+                    setNewCondition({ name: "", diagnosisDate: new Date(), notes: "" });
+                  }}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonCancelText]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonSave]}
+                  onPress={handleAddHealthCondition}
+                >
+                  <Text style={[styles.modalButtonText, styles.modalButtonSaveText]}>
+                    Add Condition
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </ScrollView>
           </View>
         </View>
