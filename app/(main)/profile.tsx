@@ -7,8 +7,8 @@ import {
 } from "@/assets/styles";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
-import { Goal, ProhibitedIngredient } from "@/utils/types/user.types";
-import { deleteGoal, deleteProhibitedIngredient, updateUserInfo } from "@/utils/user.repo";
+import { ProhibitedIngredient } from "@/utils/types/user.types";
+import { deleteProhibitedIngredient, updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Timestamp } from "@react-native-firebase/firestore";
@@ -182,31 +182,6 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteGoal = (goal: Goal) => {
-    if (!goal.goalId) return;
-
-    Alert.alert("Delete Goal", `Are you sure you want to delete "${goal.name}"?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteGoal(
-              currentUser.uid,
-              "currentGoals",
-              "goalId",
-              goal.goalId!
-            );
-            Alert.alert("Success", "Goal deleted");
-          } catch (error) {
-            console.error("Error deleting goal:", error);
-            Alert.alert("Error", "Failed to delete goal");
-          }
-        },
-      },
-    ]);
-  };
 
   const getInitials = () => {
     const first = userData.profile?.firstName?.charAt(0) || "";
@@ -377,27 +352,6 @@ export default function Profile() {
     },
     deleteButton: {
       padding: spacing.sm,
-    },
-    goalCard: {
-      backgroundColor: colors.backgroundSecondary,
-      padding: spacing.md,
-      borderRadius: radius.md,
-      marginBottom: spacing.sm,
-    },
-    goalName: {
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-      marginBottom: spacing.xs,
-    },
-    goalDescription: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
-      marginBottom: spacing.xs,
-    },
-    goalDate: {
-      fontSize: fontSize.xs,
-      color: colors.textTertiary,
     },
     modalOverlay: {
       flex: 1,
@@ -629,45 +583,9 @@ export default function Profile() {
               <Text style={styles.addButton}>+ Add</Text>
             </TouchableOpacity>
           </View>
-
-          {!userData.profile?.currentGoals ||
-          userData.profile.currentGoals.length === 0 ? (
-            <Text style={styles.emptyText}>No goals set yet</Text>
-          ) : (
-            userData.profile.currentGoals.map((goal) => (
-              <View key={goal.goalId} style={styles.goalCard}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.goalName}>{goal.name}</Text>
-                    {goal.description && (
-                      <Text style={styles.goalDescription}>
-                        {goal.description}
-                      </Text>
-                    )}
-                    <Text style={styles.goalDate}>
-                      End Date: {formatDate(goal.endDate)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteGoal(goal)}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={20}
-                      color={colors.error}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
+          <Text style={styles.emptyText}>
+            View and manage your goals on the home page
+          </Text>
         </View>
 
         {/* Settings Button */}
