@@ -89,6 +89,8 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
 
   if (updates.weight !== undefined) infoUpdate.weight = updates.weight;
 
+  if (updates.activityLevel !== undefined) infoUpdate.activityLevel = updates.activityLevel;
+
   if (updates.onboardingComplete)
     infoUpdate.onboardingComplete = updates.onboardingComplete;
 

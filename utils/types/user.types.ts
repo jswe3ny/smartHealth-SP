@@ -23,12 +23,15 @@ export type PersonalInformation = {
   weight?: number; // in pounds
 };
 
+export type ActivityLevel = "sedentary" | "lightly_active" | "active" | "very_active";
+
 export type UserDoc = {
   firstName?: string;
   lastName?: string;
   dateOfBirth?: Timestamp;
   height?: number; // in inches
   weight?: number; // in pounds
+  activityLevel?: ActivityLevel;
   email: string;
   onboardingComplete: boolean;
   createdAt: Timestamp;

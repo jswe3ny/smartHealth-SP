@@ -6,7 +6,9 @@ import {
   useThemeColors,
 } from "@/assets/styles";
 import { useAuth } from "@/contexts/authContext";
-import { deleteUserData } from "@/utils/user.repo";
+import { useUserInfo } from "@/hooks/useUserInfo";
+import { ActivityLevel } from "@/utils/types/user.types";
+import { deleteUserData, updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
 import { EmailAuthProvider, getAuth, reauthenticateWithCredential, updatePassword } from "@react-native-firebase/auth";
 import { router } from "expo-router";
@@ -25,6 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Settings() {
   const { currentUser, accountSignOut } = useAuth();
+  const userData = useUserInfo();
   const colors = useThemeColors();
 
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -43,7 +46,51 @@ export default function Settings() {
   const [showDeletePassword, setShowDeletePassword] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Activity level state
+  const [showActivityLevelModal, setShowActivityLevelModal] = useState(false);
+
   if (!currentUser) return null;
+
+  const activityLevels: { value: ActivityLevel; label: string; description: string }[] = [
+    {
+      value: "sedentary",
+      label: "Sedentary",
+      description: "Little to no exercise",
+    },
+    {
+      value: "lightly_active",
+      label: "Lightly Active",
+      description: "Light exercise 1-3 days/week",
+    },
+    {
+      value: "active",
+      label: "Active",
+      description: "Moderate exercise 3-5 days/week",
+    },
+    {
+      value: "very_active",
+      label: "Very Active",
+      description: "Hard exercise 6-7 days/week",
+    },
+  ];
+
+  const getActivityLevelLabel = (level?: ActivityLevel) => {
+    const found = activityLevels.find((a) => a.value === level);
+    return found ? found.label : "Not set";
+  };
+
+  const handleUpdateActivityLevel = async (level: ActivityLevel) => {
+    try {
+      await updateUserInfo(currentUser.uid, {
+        activityLevel: level,
+      });
+      setShowActivityLevelModal(false);
+      Alert.alert("Success", "Activity level updated successfully!");
+    } catch (error) {
+      console.error("Error updating activity level:", error);
+      Alert.alert("Error", "Failed to update activity level");
+    }
+  };
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -244,6 +291,11 @@ export default function Settings() {
       color: colors.text,
       fontWeight: fontWeight.medium,
     },
+    settingsItemSubtext: {
+      fontSize: fontSize.sm,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -328,6 +380,37 @@ export default function Settings() {
     dangerItem: {
       borderBottomColor: colors.error + "20",
     },
+    activityLevelOption: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: spacing.md,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.backgroundSecondary,
+      marginBottom: spacing.md,
+    },
+    activityLevelOptionSelected: {
+      borderColor: colors.pastelGreen,
+      backgroundColor: colors.pastelGreen + "20",
+    },
+    activityLevelLabel: {
+      fontSize: fontSize.md,
+      fontWeight: fontWeight.semibold,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    activityLevelLabelSelected: {
+      color: colors.pastelGreenText,
+    },
+    activityLevelDescription: {
+      fontSize: fontSize.sm,
+      color: colors.textSecondary,
+    },
+    activityLevelDescriptionSelected: {
+      color: colors.pastelGreenText + "CC",
+    },
   });
 
   return (
@@ -340,6 +423,27 @@ export default function Settings() {
       </View>
 
       <ScrollView>
+        {/* Health Preferences Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Health Preferences</Text>
+          
+          <TouchableOpacity
+            style={styles.settingsItem}
+            onPress={() => setShowActivityLevelModal(true)}
+          >
+            <View style={styles.settingsItemLeft}>
+              <Ionicons name="fitness-outline" size={20} color={colors.text} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingsItemText}>Activity Level</Text>
+                <Text style={styles.settingsItemSubtext}>
+                  {getActivityLevelLabel(userData.profile?.activityLevel)}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
         {/* Account Settings Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
@@ -600,6 +704,74 @@ export default function Settings() {
                   </Text>
                 </TouchableOpacity>
               </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Activity Level Modal */}
+      <Modal
+        visible={showActivityLevelModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowActivityLevelModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Activity Level</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowActivityLevelModal(false)}
+              >
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={[styles.label, { marginBottom: spacing.lg }]}>
+                Select your typical activity level to help us provide better health recommendations.
+              </Text>
+
+              {activityLevels.map((level) => (
+                <TouchableOpacity
+                  key={level.value}
+                  style={[
+                    styles.activityLevelOption,
+                    userData.profile?.activityLevel === level.value &&
+                      styles.activityLevelOptionSelected,
+                  ]}
+                  onPress={() => handleUpdateActivityLevel(level.value)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.activityLevelLabel,
+                        userData.profile?.activityLevel === level.value &&
+                          styles.activityLevelLabelSelected,
+                      ]}
+                    >
+                      {level.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.activityLevelDescription,
+                        userData.profile?.activityLevel === level.value &&
+                          styles.activityLevelDescriptionSelected,
+                      ]}
+                    >
+                      {level.description}
+                    </Text>
+                  </View>
+                  {userData.profile?.activityLevel === level.value && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={24}
+                      color={colors.pastelGreenText}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           </View>
         </View>
