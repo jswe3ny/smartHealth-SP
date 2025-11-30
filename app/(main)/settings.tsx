@@ -709,7 +709,7 @@ export default function Settings() {
         </View>
       </Modal>
 
-      {/* Activity Level Modal */}
+      {/* Activity Level */}
       <Modal
         visible={showActivityLevelModal}
         transparent
