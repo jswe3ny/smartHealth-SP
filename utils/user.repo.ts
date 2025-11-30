@@ -84,6 +84,10 @@ export const updateUserInfo = async (uid: string, updates: UserUpdates) => {
 
   if (updates.dateOfBirth) infoUpdate.dateOfBirth = updates.dateOfBirth;
 
+  if (updates.height !== undefined) infoUpdate.height = updates.height;
+
+  if (updates.weight !== undefined) infoUpdate.weight = updates.weight;
+
   if (updates.onboardingComplete)
     infoUpdate.onboardingComplete = updates.onboardingComplete;
 

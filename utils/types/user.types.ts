@@ -19,12 +19,16 @@ export type PersonalInformation = {
   firstName?: string;
   lastName?: string;
   dateOfBirth?: Timestamp;
+  height?: number; // in inches
+  weight?: number; // in pounds
 };
 
 export type UserDoc = {
   firstName?: string;
   lastName?: string;
   dateOfBirth?: Timestamp;
+  height?: number; // in inches
+  weight?: number; // in pounds
   email: string;
   onboardingComplete: boolean;
   createdAt: Timestamp;

@@ -12,6 +12,7 @@ import { deleteGoal, deleteProhibitedIngredient, updateUserInfo } from "@/utils/
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Timestamp } from "@react-native-firebase/firestore";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -43,6 +44,12 @@ export default function Profile() {
   const [dob, setDob] = useState(
     userData.profile?.dateOfBirth?.toDate() || new Date()
   );
+  const [height, setHeight] = useState(
+    userData.profile?.height?.toString() || ""
+  );
+  const [weight, setWeight] = useState(
+    userData.profile?.weight?.toString() || ""
+  );
 
   // Sync profile state when userData changes
   useEffect(() => {
@@ -52,6 +59,8 @@ export default function Profile() {
       if (userData.profile.dateOfBirth) {
         setDob(userData.profile.dateOfBirth.toDate());
       }
+      setHeight(userData.profile.height?.toString() || "");
+      setWeight(userData.profile.weight?.toString() || "");
     }
   }, [userData.profile]);
 
@@ -73,10 +82,15 @@ export default function Profile() {
 
   const handleUpdateProfile = async () => {
     try {
+      const heightNum = height.trim() ? parseFloat(height.trim()) : undefined;
+      const weightNum = weight.trim() ? parseFloat(weight.trim()) : undefined;
+
       await updateUserInfo(currentUser.uid, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         dateOfBirth: Timestamp.fromDate(dob),
+        height: heightNum,
+        weight: weightNum,
       });
       setShowEditProfileModal(false);
       Alert.alert("Success", "Profile updated successfully!");
@@ -208,6 +222,18 @@ export default function Profile() {
       month: "long",
       day: "numeric",
     });
+  };
+
+  const formatHeight = (heightInches: number | undefined) => {
+    if (!heightInches) return "Not set";
+    const feet = Math.floor(heightInches / 12);
+    const inches = Math.round(heightInches % 12);
+    return `${feet}'${inches}"`;
+  };
+
+  const formatWeight = (weight: number | undefined) => {
+    if (!weight) return "Not set";
+    return `${weight} lbs`;
   };
 
   const getSeverityColor = (severity: number) => {
@@ -458,6 +484,24 @@ export default function Profile() {
     modalButtonSaveText: {
       color: colors.pastelGreenText,
     },
+    settingsButton: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: colors.pastelGreen,
+      padding: spacing.lg,
+      borderRadius: radius.md,
+    },
+    settingsButtonLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+    settingsButtonText: {
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.semibold,
+      color: colors.pastelGreenText,
+    },
   });
 
   return (
@@ -494,6 +538,18 @@ export default function Profile() {
                 {formatDate(userData.profile?.dateOfBirth)}
               </Text>
             </View>
+            <View style={styles.profileRow}>
+              <Text style={styles.profileLabel}>Height</Text>
+              <Text style={styles.profileValue}>
+                {formatHeight(userData.profile?.height)}
+              </Text>
+            </View>
+            <View style={styles.profileRow}>
+              <Text style={styles.profileLabel}>Weight</Text>
+              <Text style={styles.profileValue}>
+                {formatWeight(userData.profile?.weight)}
+              </Text>
+            </View>
           </View>
 
           <TouchableOpacity
@@ -504,6 +560,8 @@ export default function Profile() {
               setDob(
                 userData.profile?.dateOfBirth?.toDate() || new Date()
               );
+              setHeight(userData.profile?.height?.toString() || "");
+              setWeight(userData.profile?.weight?.toString() || "");
               setShowEditProfileModal(true);
             }}
           >
@@ -611,6 +669,20 @@ export default function Profile() {
             ))
           )}
         </View>
+
+        {/* Settings Button */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => router.push("./settings")}
+          >
+            <View style={styles.settingsButtonLeft}>
+              <Ionicons name="settings-outline" size={24} color={colors.pastelGreenText} />
+              <Text style={styles.settingsButtonText}>Settings</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* Edit Profile Modal */}
@@ -681,6 +753,33 @@ export default function Profile() {
                     }}
                   />
                 )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Height (inches)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={height}
+                  onChangeText={setHeight}
+                  placeholder="e.g., 70 (for 5'10&quot;)"
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="numeric"
+                />
+                <Text style={[styles.label, { fontSize: fontSize.xs, marginTop: spacing.xs, fontWeight: fontWeight.regular }]}>
+                  Enter total height in inches (e.g., 70 for 5&apos;10&quot;)
+                </Text>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Weight (lbs)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={weight}
+                  onChangeText={setWeight}
+                  placeholder="e.g., 150"
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="numeric"
+                />
               </View>
 
               <View style={styles.modalButtons}>
