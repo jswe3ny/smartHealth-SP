@@ -47,9 +47,6 @@ export default function Profile() {
   const [height, setHeight] = useState(
     userData.profile?.height?.toString() || ""
   );
-  const [weight, setWeight] = useState(
-    userData.profile?.weight?.toString() || ""
-  );
 
   // Sync profile state when userData changes
   useEffect(() => {
@@ -60,7 +57,6 @@ export default function Profile() {
         setDob(userData.profile.dateOfBirth.toDate());
       }
       setHeight(userData.profile.height?.toString() || "");
-      setWeight(userData.profile.weight?.toString() || "");
     }
   }, [userData.profile]);
 
@@ -83,14 +79,12 @@ export default function Profile() {
   const handleUpdateProfile = async () => {
     try {
       const heightNum = height.trim() ? parseFloat(height.trim()) : undefined;
-      const weightNum = weight.trim() ? parseFloat(weight.trim()) : undefined;
 
       await updateUserInfo(currentUser.uid, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         dateOfBirth: Timestamp.fromDate(dob),
         height: heightNum,
-        weight: weightNum,
       });
       setShowEditProfileModal(false);
       Alert.alert("Success", "Profile updated successfully!");
@@ -204,11 +198,6 @@ export default function Profile() {
     const feet = Math.floor(heightInches / 12);
     const inches = Math.round(heightInches % 12);
     return `${feet}'${inches}"`;
-  };
-
-  const formatWeight = (weight: number | undefined) => {
-    if (!weight) return "Not set";
-    return `${weight} lbs`;
   };
 
   const getSeverityColor = (severity: number) => {
@@ -498,12 +487,6 @@ export default function Profile() {
                 {formatHeight(userData.profile?.height)}
               </Text>
             </View>
-            <View style={styles.profileRow}>
-              <Text style={styles.profileLabel}>Weight</Text>
-              <Text style={styles.profileValue}>
-                {formatWeight(userData.profile?.weight)}
-              </Text>
-            </View>
           </View>
 
           <TouchableOpacity
@@ -515,7 +498,6 @@ export default function Profile() {
                 userData.profile?.dateOfBirth?.toDate() || new Date()
               );
               setHeight(userData.profile?.height?.toString() || "");
-              setWeight(userData.profile?.weight?.toString() || "");
               setShowEditProfileModal(true);
             }}
           >
@@ -688,17 +670,6 @@ export default function Profile() {
                 </Text>
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Weight (lbs)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={weight}
-                  onChangeText={setWeight}
-                  placeholder="e.g., 150"
-                  placeholderTextColor={colors.textTertiary}
-                  keyboardType="numeric"
-                />
-              </View>
 
               <View style={styles.modalButtons}>
                 <TouchableOpacity
