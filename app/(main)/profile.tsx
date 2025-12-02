@@ -1,28 +1,28 @@
 import {
-    fontSize,
-    fontWeight,
-    radius,
-    spacing,
-    useThemeColors,
+  fontSize,
+  fontWeight,
+  radius,
+  spacing,
+  useThemeColors,
 } from "@/assets/styles";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
-import { Goal, ProhibitedIngredient } from "@/utils/types/user.types";
-import { deleteGoal, updateUserInfo } from "@/utils/user.repo";
+import { ProhibitedIngredient } from "@/utils/types/user.types";
+import { updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Timestamp } from "@react-native-firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -33,165 +33,67 @@ export default function Profile() {
 
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showAddIngredientModal, setShowAddIngredientModal] = useState(false);
-  const [showAddGoalModal, setShowAddGoalModal] = useState(false);
-  const [showProfileDatePicker, setShowProfileDatePicker] = useState(false);
-  const [showGoalDatePicker, setShowGoalDatePicker] = useState(false);
+  const [showEditHeightModal, setShowEditHeightModal] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Profile edit state
   const [firstName, setFirstName] = useState(userData.profile?.firstName || "");
   const [lastName, setLastName] = useState(userData.profile?.lastName || "");
+  const [email, setEmail] = useState(userData.profile?.email || currentUser?.email || "");
+  const [height, setHeight] = useState(userData.profile?.height?.toString() || "");
+  const [heightFeet, setHeightFeet] = useState("");
+  const [heightInches, setHeightInches] = useState("");
   const [dob, setDob] = useState(
     userData.profile?.dateOfBirth?.toDate() || new Date()
   );
+
+  // Ingredient state
+  const [ingredientName, setIngredientName] = useState("");
+  const [ingredientReason, setIngredientReason] = useState("");
+  const [ingredientSeverity, setIngredientSeverity] = useState(2);
+
+  // Latest weight from health data
+  const [latestWeight, setLatestWeight] = useState<number | null>(null);
 
   // Sync profile state when userData changes
   useEffect(() => {
     if (userData.profile) {
       setFirstName(userData.profile.firstName || "");
       setLastName(userData.profile.lastName || "");
+      setEmail(userData.profile.email || currentUser?.email || "");
+      setHeight(userData.profile.height?.toString() || "");
       if (userData.profile.dateOfBirth) {
         setDob(userData.profile.dateOfBirth.toDate());
       }
     }
-  }, [userData.profile]);
+  }, [userData.profile, currentUser?.email]);
 
-  // Prohibited ingredient state
-  const [newIngredient, setNewIngredient] = useState({
-    name: "",
-    reason: "",
-    severity: "1",
-  });
+  // Fetch latest weight from health data
+  useEffect(() => {
+    const fetchHealthData = async () => {
+      if (!currentUser) return;
+      
+      try {
+        // Get today's health data
+        const { getHealthDataByDate } = require("@/utils/health.repo");
+        const today = new Date();
+        const healthData = await getHealthDataByDate(currentUser.uid, today);
+        
+        if (healthData?.weight) {
+          setLatestWeight(healthData.weight);
+        }
+      } catch (error) {
+        console.error("Error fetching health data:", error);
+      }
+    };
 
-  // Goal state
-  const [newGoal, setNewGoal] = useState({
-    name: "",
-    description: "",
-    endDate: new Date(),
-  });
-
-  if (!currentUser) return null;
-
-  const handleUpdateProfile = async () => {
-    try {
-      await updateUserInfo(currentUser.uid, {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        dateOfBirth: Timestamp.fromDate(dob),
-      });
-      setShowEditProfileModal(false);
-      Alert.alert("Success", "Profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      Alert.alert("Error", "Failed to update profile");
-    }
-  };
-
-  const handleAddIngredient = async () => {
-    if (!newIngredient.name.trim()) {
-      Alert.alert("Error", "Please enter an ingredient name");
-      return;
-    }
-
-    try {
-      await updateUserInfo(currentUser.uid, {
-        prohibitedIngredient: {
-          name: newIngredient.name.trim(),
-          reason: newIngredient.reason.trim() || "No reason specified",
-          severity: parseInt(newIngredient.severity) || 1,
-        },
-      });
-      setNewIngredient({ name: "", reason: "", severity: "1" });
-      setShowAddIngredientModal(false);
-      Alert.alert("Success", "Prohibited ingredient added!");
-    } catch (error) {
-      console.error("Error adding ingredient:", error);
-      Alert.alert("Error", "Failed to add ingredient");
-    }
-  };
-
-  const handleDeleteIngredient = (ingredient: ProhibitedIngredient) => {
-    Alert.alert(
-      "Delete Ingredient",
-      `Are you sure you want to remove "${ingredient.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const currentIngredients =
-                userData.profile?.prohibitedIngredients || [];
-              const updated = currentIngredients.filter(
-                (ing) => ing.ingredientId !== ingredient.ingredientId
-              );
-              await updateUserInfo(currentUser.uid, {
-                prohibitedIngredients: updated,
-              });
-              Alert.alert("Success", "Ingredient removed");
-            } catch (error) {
-              console.error("Error deleting ingredient:", error);
-              Alert.alert("Error", "Failed to delete ingredient");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleAddGoal = async () => {
-    if (!newGoal.name.trim()) {
-      Alert.alert("Error", "Please enter a goal name");
-      return;
-    }
-
-    try {
-      await updateUserInfo(currentUser.uid, {
-        goal: {
-          name: newGoal.name.trim(),
-          description: newGoal.description.trim() || "",
-          endDate: Timestamp.fromDate(newGoal.endDate),
-        },
-      });
-      setNewGoal({ name: "", description: "", endDate: new Date() });
-      setShowAddGoalModal(false);
-      Alert.alert("Success", "Goal added successfully!");
-    } catch (error) {
-      console.error("Error adding goal:", error);
-      Alert.alert("Error", "Failed to add goal");
-    }
-  };
-
-  const handleDeleteGoal = (goal: Goal) => {
-    if (!goal.goalId) return;
-
-    Alert.alert("Delete Goal", `Are you sure you want to delete "${goal.name}"?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteGoal(
-              currentUser.uid,
-              "currentGoals",
-              "goalId",
-              goal.goalId!
-            );
-            Alert.alert("Success", "Goal deleted");
-          } catch (error) {
-            console.error("Error deleting goal:", error);
-            Alert.alert("Error", "Failed to delete goal");
-          }
-        },
-      },
-    ]);
-  };
+    fetchHealthData();
+  }, [currentUser]);
 
   const getInitials = () => {
-    const first = userData.profile?.firstName?.charAt(0) || "";
-    const last = userData.profile?.lastName?.charAt(0) || "";
-    return (first + last).toUpperCase() || "U";
+    const first = userData.profile?.firstName || "";
+    const last = userData.profile?.lastName || "";
+    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
   };
 
   const formatDate = (date: Date | Timestamp | undefined) => {
@@ -210,72 +112,167 @@ export default function Profile() {
     return colors.info;
   };
 
+  const handleSaveProfile = async () => {
+    if (!currentUser) return;
+
+    try {
+      const updates: any = {
+        firstName,
+        lastName,
+        email,
+        dateOfBirth: Timestamp.fromDate(dob),
+      };
+
+      await updateUserInfo(currentUser.uid, updates);
+      setShowEditProfileModal(false);
+      Alert.alert("Success", "Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      Alert.alert("Error", "Failed to update profile");
+    }
+  };
+
+  const handleSaveHeight = async () => {
+    if (!currentUser || !heightFeet.trim() || !heightInches.trim()) {
+      Alert.alert("Error", "Please enter your height");
+      return;
+    }
+
+    const feet = parseInt(heightFeet);
+    const inches = parseInt(heightInches);
+    
+    if (isNaN(feet) || isNaN(inches) || feet < 3 || feet > 8 || inches < 0 || inches >= 12) {
+      Alert.alert("Error", "Please enter a valid height (3-8 feet, 0-11 inches)");
+      return;
+    }
+
+    try {
+      const totalInches = feet * 12 + inches;
+      await updateUserInfo(currentUser.uid, { height: totalInches });
+      setShowEditHeightModal(false);
+      Alert.alert("Success", "Height updated successfully!");
+    } catch (error) {
+      console.error("Error updating height:", error);
+      Alert.alert("Error", "Failed to update height");
+    }
+  };
+
+  const handleAddIngredient = async () => {
+    if (!currentUser || !ingredientName.trim()) {
+      Alert.alert("Error", "Please enter an ingredient name");
+      return;
+    }
+
+    try {
+      const newIngredient: ProhibitedIngredient = {
+        name: ingredientName.trim(),
+        reason: ingredientReason.trim() ? ingredientReason.trim() : undefined,
+        severity: ingredientSeverity,
+      };
+
+      await updateUserInfo(currentUser.uid, {
+        prohibitedIngredient: newIngredient,
+      });
+
+      setIngredientName("");
+      setIngredientReason("");
+      setIngredientSeverity(2);
+      setShowAddIngredientModal(false);
+      Alert.alert("Success", "Ingredient added successfully!");
+    } catch (error) {
+      console.error("Error adding ingredient:", error);
+      Alert.alert("Error", "Failed to add ingredient");
+    }
+  };
+
+  const handleDeleteIngredient = (ingredient: ProhibitedIngredient) => {
+    if (!currentUser) return;
+
+    Alert.alert(
+      "Delete Ingredient",
+      `Are you sure you want to remove ${ingredient.name}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { deleteGoal } = require("@/utils/user.repo");
+              await deleteGoal(
+                currentUser.uid,
+                "prohibitedIngredients",
+                "prohibitedIngredientId",
+                (ingredient as any).prohibitedIngredientId || (ingredient as any).ingredientId!
+              );
+              Alert.alert("Success", "Ingredient removed!");
+            } catch (error) {
+              console.error("Error deleting ingredient:", error);
+              Alert.alert("Error", "Failed to delete ingredient");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.backgroundSecondary,
     },
-    header: {
-      padding: spacing.xl,
-      backgroundColor: colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerTitle: {
-      fontSize: fontSize.xxl,
-      fontWeight: fontWeight.bold,
-      color: colors.text,
-      marginBottom: spacing.xs,
-    },
     profileSection: {
       backgroundColor: colors.surface,
-      padding: spacing.xl,
-      marginBottom: spacing.md,
+      padding: spacing.lg,
+      alignItems: "center",
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
     avatarContainer: {
       alignItems: "center",
       marginBottom: spacing.lg,
     },
     avatar: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      backgroundColor: colors.pastelGreen,
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.primary,
       justifyContent: "center",
       alignItems: "center",
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm,
     },
     avatarText: {
-      fontSize: fontSize.xxxl,
+      fontSize: fontSize.xxl,
       fontWeight: fontWeight.bold,
-      color: colors.pastelGreenText,
+      color: colors.surface,
     },
-    profileInfo: {
-      gap: spacing.sm,
-    },
-    profileRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: spacing.sm,
+    profileValue: {
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.semibold,
+      color: colors.text,
     },
     profileLabel: {
       fontSize: fontSize.sm,
       color: colors.textSecondary,
-      fontWeight: fontWeight.medium,
+      marginTop: spacing.xs,
     },
-    profileValue: {
-      fontSize: fontSize.md,
-      color: colors.text,
-      fontWeight: fontWeight.semibold,
+    profileInfo: {
+      width: "100%",
+      marginTop: spacing.md,
+    },
+    profileRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
     },
     editButton: {
+      marginTop: spacing.lg,
       backgroundColor: colors.pastelGreen,
       paddingVertical: spacing.md,
-      paddingHorizontal: spacing.lg,
+      paddingHorizontal: spacing.xl,
       borderRadius: radius.md,
-      alignItems: "center",
-      marginTop: spacing.md,
     },
     editButtonText: {
       color: colors.pastelGreenText,
@@ -284,17 +281,17 @@ export default function Profile() {
     },
     section: {
       backgroundColor: colors.surface,
-      padding: spacing.xl,
-      marginBottom: spacing.md,
+      marginTop: spacing.md,
+      padding: spacing.lg,
     },
     sectionHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: spacing.lg,
+      marginBottom: spacing.md,
     },
     sectionTitle: {
-      fontSize: fontSize.xl,
+      fontSize: fontSize.lg,
       fontWeight: fontWeight.bold,
       color: colors.text,
     },
@@ -304,19 +301,19 @@ export default function Profile() {
       fontWeight: fontWeight.semibold,
     },
     emptyText: {
-      textAlign: "center",
-      color: colors.textSecondary,
-      paddingVertical: spacing.xl,
       fontSize: fontSize.md,
+      color: colors.textSecondary,
+      textAlign: "center",
+      paddingVertical: spacing.lg,
     },
     ingredientCard: {
-      backgroundColor: colors.backgroundSecondary,
-      padding: spacing.md,
-      borderRadius: radius.md,
-      marginBottom: spacing.sm,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
+      padding: spacing.md,
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: radius.sm,
+      marginBottom: spacing.sm,
     },
     ingredientInfo: {
       flex: 1,
@@ -330,54 +327,34 @@ export default function Profile() {
     ingredientReason: {
       fontSize: fontSize.sm,
       color: colors.textSecondary,
+      marginBottom: spacing.xs,
     },
     severityBadge: {
+      alignSelf: "flex-start",
       paddingHorizontal: spacing.sm,
       paddingVertical: spacing.xs,
       borderRadius: radius.sm,
-      marginTop: spacing.xs,
-      alignSelf: "flex-start",
     },
     severityText: {
       fontSize: fontSize.xs,
+      color: colors.surface,
       fontWeight: fontWeight.semibold,
-      color: colors.textInverse,
     },
     deleteButton: {
       padding: spacing.sm,
     },
-    goalCard: {
-      backgroundColor: colors.backgroundSecondary,
-      padding: spacing.md,
-      borderRadius: radius.md,
-      marginBottom: spacing.sm,
-    },
-    goalName: {
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-      marginBottom: spacing.xs,
-    },
-    goalDescription: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
-      marginBottom: spacing.xs,
-    },
-    goalDate: {
-      fontSize: fontSize.xs,
-      color: colors.textTertiary,
-    },
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "flex-end",
+      justifyContent: "center",
+      alignItems: "center",
     },
     modalContent: {
       backgroundColor: colors.surface,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      padding: spacing.xl,
-      maxHeight: "90%",
+      borderRadius: radius.md,
+      padding: spacing.lg,
+      width: "90%",
+      maxWidth: 400,
     },
     modalHeader: {
       flexDirection: "row",
@@ -386,54 +363,70 @@ export default function Profile() {
       marginBottom: spacing.lg,
     },
     modalTitle: {
-      fontSize: fontSize.xxl,
+      fontSize: fontSize.xl,
       fontWeight: fontWeight.bold,
       color: colors.text,
     },
     closeButton: {
-      padding: spacing.sm,
+      padding: spacing.xs,
     },
-    formGroup: {
-      marginBottom: spacing.lg,
+    input: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: radius.sm,
+      padding: spacing.md,
+      fontSize: fontSize.md,
+      color: colors.text,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    inputMultiline: {
+      height: 80,
+      textAlignVertical: "top",
     },
     label: {
       fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
       color: colors.text,
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
-    input: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.backgroundSecondary,
-      padding: spacing.md,
-      borderRadius: radius.md,
-      fontSize: fontSize.md,
-      color: colors.text,
+    severityContainer: {
+      marginBottom: spacing.md,
     },
-    dateButton: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.backgroundSecondary,
-      padding: spacing.md,
-      borderRadius: radius.md,
+    severityOptions: {
       flexDirection: "row",
       justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    severityOption: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.sm,
+      borderWidth: 2,
+      borderColor: colors.border,
       alignItems: "center",
     },
-    dateButtonText: {
-      fontSize: fontSize.md,
-      color: colors.text,
+    severityOptionActive: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primary + "20",
+    },
+    severityOptionText: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.textSecondary,
+    },
+    severityOptionTextActive: {
+      color: colors.primary,
     },
     modalButtons: {
       flexDirection: "row",
-      gap: spacing.md,
-      marginTop: spacing.lg,
+      gap: spacing.sm,
     },
     modalButton: {
       flex: 1,
       paddingVertical: spacing.md,
-      borderRadius: radius.md,
+      borderRadius: radius.sm,
       alignItems: "center",
     },
     modalButtonCancel: {
@@ -445,12 +438,41 @@ export default function Profile() {
     modalButtonText: {
       fontSize: fontSize.md,
       fontWeight: fontWeight.semibold,
-    },
-    modalButtonCancelText: {
       color: colors.text,
     },
     modalButtonSaveText: {
       color: colors.pastelGreenText,
+    },
+    heightRow: {
+      flexDirection: "row",
+      gap: spacing.md,
+    },
+    heightInputContainer: {
+      flex: 1,
+    },
+    heightLabel: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.text,
+      marginBottom: spacing.xs,
+      textAlign: "center",
+    },
+    helpText: {
+      fontSize: fontSize.xs,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
+    datePickerButton: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: radius.sm,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    datePickerButtonText: {
+      fontSize: fontSize.md,
+      color: colors.text,
     },
   });
 
@@ -483,9 +505,44 @@ export default function Profile() {
               </Text>
             </View>
             <View style={styles.profileRow}>
+              <Text style={styles.profileLabel}>Email</Text>
+              <Text style={styles.profileValue}>
+                {userData.profile?.email || "Not set"}
+              </Text>
+            </View>
+            <View style={styles.profileRow}>
               <Text style={styles.profileLabel}>Date of Birth</Text>
               <Text style={styles.profileValue}>
                 {formatDate(userData.profile?.dateOfBirth)}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.profileRow}
+              onLongPress={() => {
+                const totalInches = userData.profile?.height || 0;
+                if (totalInches > 0) {
+                  const feet = Math.floor(totalInches / 12);
+                  const inches = totalInches % 12;
+                  setHeightFeet(feet.toString());
+                  setHeightInches(inches.toString());
+                } else {
+                  setHeightFeet("");
+                  setHeightInches("");
+                }
+                setShowEditHeightModal(true);
+              }}
+            >
+              <Text style={styles.profileLabel}>Height (Long press to edit)</Text>
+              <Text style={styles.profileValue}>
+                {userData.profile?.height ? 
+                  `${Math.floor(userData.profile.height / 12)}'${userData.profile.height % 12}"` : 
+                  "Not set"}
+              </Text>
+            </TouchableOpacity>
+            <View style={styles.profileRow}>
+              <Text style={styles.profileLabel}>Weight</Text>
+              <Text style={styles.profileValue}>
+                {latestWeight ? `${latestWeight.toFixed(1)} lbs` : "No data"}
               </Text>
             </View>
           </View>
@@ -495,6 +552,7 @@ export default function Profile() {
             onPress={() => {
               setFirstName(userData.profile?.firstName || "");
               setLastName(userData.profile?.lastName || "");
+              setEmail(userData.profile?.email || currentUser?.email || "");
               setDob(
                 userData.profile?.dateOfBirth?.toDate() || new Date()
               );
@@ -522,8 +580,8 @@ export default function Profile() {
               No prohibited ingredients added yet
             </Text>
           ) : (
-            userData.profile.prohibitedIngredients.map((ingredient) => (
-              <View key={ingredient.ingredientId} style={styles.ingredientCard}>
+            userData.profile.prohibitedIngredients.map((ingredient: any, index) => (
+              <View key={ingredient.prohibitedIngredientId || ingredient.ingredientId || index} style={styles.ingredientCard}>
                 <View style={styles.ingredientInfo}>
                   <Text style={styles.ingredientName}>{ingredient.name}</Text>
                   {ingredient.reason && (
@@ -556,55 +614,6 @@ export default function Profile() {
             ))
           )}
         </View>
-
-        {/* Health Goals Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Health Goals</Text>
-            <TouchableOpacity onPress={() => setShowAddGoalModal(true)}>
-              <Text style={styles.addButton}>+ Add</Text>
-            </TouchableOpacity>
-          </View>
-
-          {!userData.profile?.currentGoals ||
-          userData.profile.currentGoals.length === 0 ? (
-            <Text style={styles.emptyText}>No goals set yet</Text>
-          ) : (
-            userData.profile.currentGoals.map((goal) => (
-              <View key={goal.goalId} style={styles.goalCard}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.goalName}>{goal.name}</Text>
-                    {goal.description && (
-                      <Text style={styles.goalDescription}>
-                        {goal.description}
-                      </Text>
-                    )}
-                    <Text style={styles.goalDate}>
-                      End Date: {formatDate(goal.endDate)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => handleDeleteGoal(goal)}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={20}
-                      color={colors.error}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
       </ScrollView>
 
       {/* Edit Profile Modal */}
@@ -622,85 +631,82 @@ export default function Profile() {
                 style={styles.closeButton}
                 onPress={() => setShowEditProfileModal(false)}
               >
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>First Name</Text>
-                <TextInput
-                  style={styles.input}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  placeholder="Enter first name"
-                  placeholderTextColor={colors.textTertiary}
-                />
-              </View>
+            <Text style={styles.label}>First Name</Text>
+            <TextInput
+              style={styles.input}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+              placeholderTextColor={colors.textSecondary}
+            />
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Last Name</Text>
-                <TextInput
-                  style={styles.input}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  placeholder="Enter last name"
-                  placeholderTextColor={colors.textTertiary}
-                />
-              </View>
+            <Text style={styles.label}>Last Name</Text>
+            <TextInput
+              style={styles.input}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter last name"
+              placeholderTextColor={colors.textSecondary}
+            />
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Date of Birth</Text>
-                <TouchableOpacity
-                  style={styles.dateButton}
-                  onPress={() => setShowProfileDatePicker(true)}
-                >
-                  <Text style={styles.dateButtonText}>
-                    {dob.toLocaleDateString()}
-                  </Text>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-                {showProfileDatePicker && (
-                  <DateTimePicker
-                    value={dob}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={(event, selectedDate) => {
-                      setShowProfileDatePicker(Platform.OS === "ios");
-                      if (selectedDate) setDob(selectedDate);
-                    }}
-                  />
-                )}
-              </View>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter email"
+              keyboardType="email-address"
+              placeholderTextColor={colors.textSecondary}
+            />
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={() => setShowEditProfileModal(false)}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalButtonCancelText]}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonSave]}
-                  onPress={handleUpdateProfile}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalButtonSaveText]}>
-                    Save
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+            <Text style={styles.label}>Date of Birth</Text>
+            <TouchableOpacity
+              style={styles.datePickerButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.datePickerButtonText}>
+                {dob.toLocaleDateString()}
+              </Text>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={dob}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(Platform.OS === "ios");
+                  if (selectedDate) {
+                    setDob(selectedDate);
+                  }
+                }}
+                maximumDate={new Date()}
+              />
+            )}
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowEditProfileModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={handleSaveProfile}
+              >
+                <Text style={styles.modalButtonSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* Add Prohibited Ingredient Modal */}
+      {/* Add Ingredient Modal */}
       <Modal
         visible={showAddIngredientModal}
         transparent
@@ -715,176 +721,143 @@ export default function Profile() {
                 style={styles.closeButton}
                 onPress={() => setShowAddIngredientModal(false)}
               >
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Ingredient Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={newIngredient.name}
-                  onChangeText={(text) =>
-                    setNewIngredient({ ...newIngredient, name: text })
-                  }
-                  placeholder="e.g., Peanuts, Gluten"
-                  placeholderTextColor={colors.textTertiary}
-                />
-              </View>
+            <Text style={styles.label}>Ingredient Name</Text>
+            <TextInput
+              style={styles.input}
+              value={ingredientName}
+              onChangeText={setIngredientName}
+              placeholder="e.g., Peanuts"
+              placeholderTextColor={colors.textSecondary}
+            />
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Reason (Optional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={newIngredient.reason}
-                  onChangeText={(text) =>
-                    setNewIngredient({ ...newIngredient, reason: text })
-                  }
-                  placeholder="Why is this prohibited?"
-                  placeholderTextColor={colors.textTertiary}
-                  multiline
-                />
-              </View>
+            <Text style={styles.label}>Reason (Optional)</Text>
+            <TextInput
+              style={[styles.input, styles.inputMultiline]}
+              value={ingredientReason}
+              onChangeText={setIngredientReason}
+              placeholder="Why are you avoiding this?"
+              placeholderTextColor={colors.textSecondary}
+              multiline
+            />
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Severity (1-5)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={newIngredient.severity}
-                  onChangeText={(text) =>
-                    setNewIngredient({ ...newIngredient, severity: text })
-                  }
-                  placeholder="1"
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.textTertiary}
-                />
+            <View style={styles.severityContainer}>
+              <Text style={styles.label}>Severity</Text>
+              <View style={styles.severityOptions}>
+                {[1, 2, 3].map((severity) => (
+                  <TouchableOpacity
+                    key={severity}
+                    style={[
+                      styles.severityOption,
+                      ingredientSeverity === severity &&
+                        styles.severityOptionActive,
+                    ]}
+                    onPress={() => setIngredientSeverity(severity)}
+                  >
+                    <Text
+                      style={[
+                        styles.severityOptionText,
+                        ingredientSeverity === severity &&
+                          styles.severityOptionTextActive,
+                      ]}
+                    >
+                      {severity === 1 ? "Mild" : severity === 2 ? "Moderate" : "Severe"}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
+            </View>
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={() => {
-                    setShowAddIngredientModal(false);
-                    setNewIngredient({ name: "", reason: "", severity: "1" });
-                  }}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalButtonCancelText]}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonSave]}
-                  onPress={handleAddIngredient}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalButtonSaveText]}>
-                    Add
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setIngredientName("");
+                  setIngredientReason("");
+                  setIngredientSeverity(2);
+                  setShowAddIngredientModal(false);
+                }}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={handleAddIngredient}
+              >
+                <Text style={styles.modalButtonSaveText}>Add</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* Add Goal Modal */}
+      {/* Edit Height Modal */}
       <Modal
-        visible={showAddGoalModal}
+        visible={showEditHeightModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowAddGoalModal(false)}
+        onRequestClose={() => setShowEditHeightModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Health Goal</Text>
+              <Text style={styles.modalTitle}>Edit Height</Text>
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={() => setShowAddGoalModal(false)}
+                onPress={() => setShowEditHeightModal(false)}
               >
-                <Ionicons name="close" size={24} color={colors.textSecondary} />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Goal Name *</Text>
+            <Text style={styles.label}>Height</Text>
+            <View style={styles.heightRow}>
+              <View style={styles.heightInputContainer}>
+                <Text style={styles.heightLabel}>Feet</Text>
                 <TextInput
                   style={styles.input}
-                  value={newGoal.name}
-                  onChangeText={(text) =>
-                    setNewGoal({ ...newGoal, name: text })
-                  }
-                  placeholder="e.g., Lose 10 pounds"
-                  placeholderTextColor={colors.textTertiary}
+                  value={heightFeet}
+                  onChangeText={setHeightFeet}
+                  placeholder="5"
+                  keyboardType="numeric"
+                  maxLength={1}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
-
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>Description (Optional)</Text>
+              <View style={styles.heightInputContainer}>
+                <Text style={styles.heightLabel}>Inches</Text>
                 <TextInput
                   style={styles.input}
-                  value={newGoal.description}
-                  onChangeText={(text) =>
-                    setNewGoal({ ...newGoal, description: text })
-                  }
-                  placeholder="Describe your goal"
-                  placeholderTextColor={colors.textTertiary}
-                  multiline
+                  value={heightInches}
+                  onChangeText={setHeightInches}
+                  placeholder="10"
+                  keyboardType="numeric"
+                  maxLength={2}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
+            </View>
+            <Text style={styles.helpText}>
+              Enter height between 3-8 feet and 0-11 inches
+            </Text>
 
-              <View style={styles.formGroup}>
-                <Text style={styles.label}>End Date</Text>
-                <TouchableOpacity
-                  style={styles.dateButton}
-                  onPress={() => setShowGoalDatePicker(true)}
-                >
-                  <Text style={styles.dateButtonText}>
-                    {newGoal.endDate.toLocaleDateString()}
-                  </Text>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-                {showGoalDatePicker && (
-                  <DateTimePicker
-                    value={newGoal.endDate}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={(event, selectedDate) => {
-                      setShowGoalDatePicker(Platform.OS === "ios");
-                      if (selectedDate)
-                        setNewGoal({ ...newGoal, endDate: selectedDate });
-                    }}
-                  />
-                )}
-              </View>
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={() => {
-                    setShowAddGoalModal(false);
-                    setNewGoal({ name: "", description: "", endDate: new Date() });
-                  }}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalButtonCancelText]}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonSave]}
-                  onPress={handleAddGoal}
-                >
-                  <Text style={[styles.modalButtonText, styles.modalButtonSaveText]}>
-                    Add Goal
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowEditHeightModal(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSave]}
+                onPress={handleSaveHeight}
+              >
+                <Text style={styles.modalButtonSaveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

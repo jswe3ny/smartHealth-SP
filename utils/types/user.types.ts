@@ -19,7 +19,7 @@ export type Goal = {
 export type ProhibitedIngredient = {
   ingredientId?: string;
   name: string;
-  reason: string;
+  reason?: string
   severity: number;
 };
 
@@ -33,6 +33,7 @@ export type UserDoc = {
   firstName?: string;
   lastName?: string;
   dateOfBirth?: Timestamp;
+  height?: number;
   email: string;
   onboardingComplete: boolean;
   createdAt: Timestamp;

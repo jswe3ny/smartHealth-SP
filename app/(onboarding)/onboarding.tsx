@@ -23,6 +23,8 @@ export const Onboarding = () => {
   const { accountSignOut, currentUser } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [heightFeet, setHeightFeet] = useState("");
+  const [heightInches, setHeightInches] = useState("");
   const [dob, setDOB] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,6 +33,11 @@ export const Onboarding = () => {
 
   const canSubmit = () => {
     if (!firstName.trim() || !lastName.trim()) return false;
+    const feet = parseInt(heightFeet);
+    const inches = parseInt(heightInches);
+    if (isNaN(feet) || isNaN(inches)) return false;
+    if (feet < 3 || feet > 8) return false;
+    if (inches < 0 || inches >= 12) return false;
     return true;
   };
 
@@ -52,11 +59,16 @@ export const Onboarding = () => {
     setLoading(true);
     setError(null);
     try {
+      const feet: number = parseInt(heightFeet);
+      const inches: number = parseInt(heightInches);
+      const totalInches: number = feet * 12 + inches;
+      
       const convertedDob = Timestamp.fromDate(dob);
       await updateUserInfo(currentUser?.uid, {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         dateOfBirth: convertedDob,
+        height: totalInches,
         onboardingComplete: true,
         currentGoals: [],
         prohibitedIngredients: [],
@@ -161,6 +173,52 @@ export const Onboarding = () => {
             )}
           </View>
 
+          <View style={styles.field}>
+            <Text style={styles.label}>Height</Text>
+            <View style={styles.heightRow}>
+              <View style={styles.heightInput}>
+                <Text style={styles.heightInputLabel}>Feet</Text>
+                <TextInput
+                  value={heightFeet}
+                  onChangeText={setHeightFeet}
+                  placeholder="5"
+                  keyboardType="numeric"
+                  maxLength={1}
+                  autoCorrect={false}
+                  style={[
+                    styles.input,
+                    focusedField === 'heightFeet' && styles.inputFocused,
+                    heightFeet.trim() && parseInt(heightFeet) >= 3 && parseInt(heightFeet) <= 8 && styles.inputValid
+                  ]}
+                  onFocus={() => setFocusedField('heightFeet')}
+                  onBlur={() => setFocusedField(null)}
+                  returnKeyType="next"
+                />
+              </View>
+
+              <View style={styles.heightInput}>
+                <Text style={styles.heightInputLabel}>Inches</Text>
+                <TextInput
+                  value={heightInches}
+                  onChangeText={setHeightInches}
+                  placeholder="10"
+                  keyboardType="numeric"
+                  maxLength={2}
+                  autoCorrect={false}
+                  style={[
+                    styles.input,
+                    focusedField === 'heightInches' && styles.inputFocused,
+                    heightInches.trim() && parseInt(heightInches) >= 0 && parseInt(heightInches) < 12 && styles.inputValid
+                  ]}
+                  onFocus={() => setFocusedField('heightInches')}
+                  onBlur={() => setFocusedField(null)}
+                  returnKeyType="next"
+                />
+              </View>
+            </View>
+            <Text style={styles.helpText}>Enter your height (e.g., 5 feet 10 inches)</Text>
+          </View>
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           {/* Privacy Notice */}
@@ -263,6 +321,20 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: 4,
     lineHeight: 16,
+  },
+  heightRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  heightInput: {
+    flex: 1,
+  },
+  heightInputLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666",
+    marginBottom: 4,
+    textAlign: "center",
   },
   dateInput: {
     height: 50,

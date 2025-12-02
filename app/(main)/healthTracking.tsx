@@ -2,7 +2,6 @@ import { colors } from "@/assets/styles";
 import { Button } from "@/components/button";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
-import { getDocWithId, upsert } from "@/utils/firestore-helpers";
 import {
   getLastMonthHealthData,
   getLastWeekHealthData,
@@ -30,12 +29,13 @@ import {
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 
+const userData = useUserInfo();
+
 // Helper functions for metrics
 const calculateBMI = (weightLbs: number, heightInches: number): number => {
   return (weightLbs / (heightInches * heightInches)) * 703;
 };
 
-// BMI calculation 
 const calculateWeeklyStreak = (weekData: DailyHealthData[], stepGoal: number): number => {
   let streak = 0;
   for (let i = weekData.length - 1; i >= 0; i--) {
@@ -118,14 +118,10 @@ export default function HealthTracking() {
 
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
 
-  const [userHeight, setUserHeight] = useState<number>(70); // inches ex.(5'10")
   const [weightGoal, setWeightGoal] = useState<number | null>(155); // goal weight
   const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
   const [tempWeightGoal, setTempWeightGoal] = useState("");
-  const [showHeightModal, setShowHeightModal] = useState(false);
-  const [tempHeightFeet, setTempHeightFeet] = useState("");
-  const [tempHeightInches, setTempHeightInches] = useState("");
-
+  
   useEffect(() => {
     checkAvailability();
   }, []);
@@ -193,18 +189,6 @@ export default function HealthTracking() {
 
         const monthlyData = await getLastMonthHealthData(currentUser.uid);
         setMonthData(monthlyData);
-
-        // Load user height from profile
-        try {
-          const profilePath = `user/${currentUser.uid}/profile/settings`;
-          const profileDoc = await getDocWithId<{ height: number }>(profilePath);
-  
-          if (profileDoc?.data?.height) {
-            setUserHeight(profileDoc.data.height);
-          }
-        } catch (error) {
-          console.error("Error loading height:", error);
-        }
 
       }
     } catch (error) {
@@ -314,39 +298,6 @@ export default function HealthTracking() {
       Alert.alert("Error", "Failed to save weight goal");
     }
   };
-
-  const handleSetHeight = async () => {
-    if (!currentUser || !tempHeightFeet) {
-      Alert.alert("Error", "Please enter your height");
-      return;
-    }
-
-    const feet = parseInt(tempHeightFeet);
-    const inches = tempHeightInches ? parseInt(tempHeightInches) : 0;
-  
-    if (isNaN(feet) || feet <= 0 || isNaN(inches) || inches < 0 || inches >= 12) {
-      Alert.alert("Error", "Please enter a valid height");
-      return;
-    }
-
-    const totalInches = (feet * 12) + inches;
-
-    try {
-      const profilePath = `user/${currentUser.uid}/profile/settings`;
-      await upsert(profilePath, {
-        height: totalInches,
-      });
-
-      setUserHeight(totalInches);
-      setShowHeightModal(false);
-      setTempHeightFeet("");
-      setTempHeightInches("");
-      Alert.alert("Success", "Height updated!");
-    } catch (error) {
-      console.error("Error saving height:", error);
-      Alert.alert("Error", "Failed to save height");
-      }
-    };
 
   const handleEditGoal = (goal: Goal) => {
     setEditingGoalId(goal.goalId || null);
@@ -492,7 +443,9 @@ export default function HealthTracking() {
 
   const weeklyAvg = calculateWeeklyAverage();
   const stepGoal = goals.find(g => g.type === "steps")?.targetValue || 10000;
-  const currentBMI = healthData?.weight ? calculateBMI(healthData.weight, userHeight) : null;
+  const currentBMI = healthData?.weight && profile?.height 
+  ? calculateBMI(healthData.weight, profile.height) 
+  : null;
   const weeklyStreak = calculateWeeklyStreak(weekData, stepGoal);
   const monthlyDistance = getTotalMonthlyDistance(monthData);
   const mostActiveDay = getMostActiveDay(weekData);
@@ -621,30 +574,6 @@ export default function HealthTracking() {
         ) : (
           <Text style={styles.emptyText}>Sync health data to set a weight goal</Text>
         )}
-      </View>
-
-      {/* Height Setting Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Height</Text>
-  
-        <TouchableOpacity 
-          style={styles.heightCard}
-          onLongPress={() => {
-            const feet = Math.floor(userHeight / 12);
-            const inches = userHeight % 12;
-            setTempHeightFeet(feet.toString());
-            setTempHeightInches(inches.toString());
-            setShowHeightModal(true);
-          }}
-        >
-          <Text style={styles.heightValue}>
-            {Math.floor(userHeight / 12)}' {userHeight % 12}"
-          </Text>
-          <Text style={styles.heightLabel}>
-            ({userHeight} inches total)
-          </Text>
-          <Text style={styles.goalHint}>💡 Long press to edit</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Daily Goals Section */}
@@ -1090,71 +1019,6 @@ export default function HealthTracking() {
           </View>
         </View>
       </Modal>
-
-      {/* Height Modal */}
-      <Modal
-        visible={showHeightModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowHeightModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Set Your Height</Text>
-
-            <View style={styles.heightInputRow}>
-              <View style={styles.heightInputGroup}>
-                <Text style={styles.modalLabel}>Feet</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="5"
-                  keyboardType="numeric"
-                  value={tempHeightFeet}
-                  onChangeText={setTempHeightFeet}
-                  maxLength={1}
-                />
-              </View>
-
-              <View style={styles.heightInputGroup}>
-                <Text style={styles.modalLabel}>Inches</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="10"
-                  keyboardType="numeric"
-                  value={tempHeightInches}
-                  onChangeText={setTempHeightInches}
-                  maxLength={2}
-                />
-              </View>
-            </View>
-
-            <Text style={styles.modalHint}>
-              {tempHeightFeet && !isNaN(parseInt(tempHeightFeet))
-                ? `Total: ${(parseInt(tempHeightFeet) * 12) + (tempHeightInches ? parseInt(tempHeightInches) : 0)} inches`
-                : "Enter your height"}
-            </Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalButtonCancel}
-                onPress={() => {
-                  setShowHeightModal(false);
-                  setTempHeightFeet("");
-                  setTempHeightInches("");
-                }}
-              >
-                <Text style={styles.modalButtonCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalButtonSave}
-                onPress={handleSetHeight}
-              >
-                <Text style={styles.modalButtonSaveText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }
@@ -1508,32 +1372,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#007AFF",
     fontWeight: "600",
-  },
-  heightCard: {
-    backgroundColor: "#f8f9fa",
-    padding: 20,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  heightValue: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 4,
-  },
-  heightLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
-  heightInputRow: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 16,
-  },
-  heightInputGroup: {
-    flex: 1,
   },
   buttonContainer: {
     padding: 16,
