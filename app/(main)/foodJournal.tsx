@@ -22,6 +22,7 @@ import {
   useThemeColors,
 } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { checkForAllergens, getAllergenAlertMessage, getSeverityText } from "@/utils/allergen.detector";
 import { addMeal, getRecentMealSummaries } from "@/utils/foodjournal.repo";
 import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import {
@@ -79,15 +80,6 @@ export default function FoodJournal() {
     }));
   };
 
-  const checkForProhibitedIngredients = (ingredients: string[]) => {
-    const prohibited = userData.profile?.prohibitedIngredients || [];
-    return prohibited.filter((p) =>
-      ingredients.some((ing) =>
-        ing.toLowerCase().includes(p.name.toLowerCase())
-      )
-    );
-  };
-
   const autofillForm = (product: ProductData) => {
     setCurrentFoodItem({
       tempClientId: undefined,
@@ -98,23 +90,30 @@ export default function FoodJournal() {
       fat: product.fat,
       sugar: product.sugar,
     });
+    setShowAddMealModal(true);
   };
 
   // Handles allergy checking and shows appropriate alerts
   const handleProductScanned = (product: ProductData) => {
     setShowScanner(false);
-    const foundProhibited = checkForProhibitedIngredients(product.ingredients);
+    // Don't reopen form modal yet - wait for user to choose from alert
+    setShowAddMealModal(false);
+    const prohibited = userData.profile?.prohibitedIngredients || [];
+const allergenMatches = checkForAllergens(product.ingredients, prohibited);
 
-    // If allergens found, show warning with confirmation
-    if (foundProhibited.length > 0) {
-      const prohibitedNames = foundProhibited.map((p) => p.name).join(", ");
-      Alert.alert(
-        "Allergy Alert",
-        `This product contains: ${prohibitedNames}\n\nYou have marked these as prohibited ingredients.`,
+// If allergens found, show warning with confirmation
+if (allergenMatches.length > 0) {
+  const alertMessage = getAllergenAlertMessage(allergenMatches);
+  const highestSeverity = Math.max(...allergenMatches.map(m => m.severity));
+  const severityText = getSeverityText(highestSeverity);
+  
+  Alert.alert(
+    `🚨 ${severityText} ALLERGEN WARNING`,
+    `${product.productName}\n\n${alertMessage}\n\n⚠️ DISCLAIMER: Always verify ingredients on the physical product label.`,
         [
           {
             text: "Close",
-            onPress: () => setShowScanner(false),
+            onPress: () => setShowAddMealModal(true),
           },
           {
             text: "Add Anyway",
@@ -125,7 +124,9 @@ export default function FoodJournal() {
                 "Are you sure?",
                 "This product contains ingredients you've marked as prohibited. Add to meal anyway?",
                 [
-                  { text: "Cancel" },
+                  { text: "Cancel", 
+                    onPress: () => setShowAddMealModal(true)
+                  },
                   {
                     text: "Yes, Add",
                     onPress: () => autofillForm(product),
@@ -139,10 +140,10 @@ export default function FoodJournal() {
     } else {
       // No allergens, show safe message
       Alert.alert(
-        "No Allergens Detected",
-        `${product.productName}\n\nNo prohibited ingredients detected.`,
+        "✅ No Known Allergens Detected",
+        `${product.productName}\n\nNo prohibited ingredients detected.\n\n⚠️ DISCLAIMER: Always verify ingredients on the physical product label.`,
         [
-          { text: "Close", onPress: () => setShowScanner(false) },
+          { text: "Close", onPress: () => setShowAddMealModal(true) },
           { text: "Add to Meal", onPress: () => autofillForm(product) },
         ]
       );
@@ -697,6 +698,34 @@ export default function FoodJournal() {
                 </TouchableOpacity>
               </View>
 
+              {/* Current Food Items List */}
+              {foodItems.length > 0 && (
+                <View style={styles.formSection}>
+                  <Text style={styles.label}>Items in this meal ({foodItems.length})</Text>
+                  {foodItems.map((item, index) => (
+                    <View key={item.tempClientId || index} style={styles.foodItemCard}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.foodItemName}>{item.foodName}</Text>
+                        <Text style={styles.foodItemMacros}>
+                          {item.calories ? `${item.calories} cal` : ''} 
+                          {item.protein ? ` • ${item.protein}g protein` : ''} 
+                          {item.carbs ? ` • ${item.carbs}g carbs` : ''} 
+                          {item.fat ? ` • ${item.fat}g fat` : ''}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => {
+                          setFoodItems(foodItems.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={16} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}    
+              
               {/* Submit Meal Button */}
               <TouchableOpacity
                 style={styles.submitButton}
@@ -715,11 +744,17 @@ export default function FoodJournal() {
       </Modal>
 
       {/* Barcode Scanner Modal */}
-      <BarcodeScanner
+      <Modal
         visible={showScanner}
-        onClose={() => setShowScanner(false)}
-        onProductScanned={handleProductScanned}
-      />
+        animationType="slide"
+        onRequestClose={() => setShowScanner(false)}
+      >
+        <BarcodeScanner
+          visible={showScanner}
+          onClose={() => setShowScanner(false)}
+          onProductScanned={handleProductScanned}
+        />
+      </Modal>
     </View>
   );
 }
