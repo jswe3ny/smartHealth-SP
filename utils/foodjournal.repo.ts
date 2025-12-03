@@ -69,6 +69,10 @@ export const addMeal = async (
   });
 
   try {
+    const totalCalories = validatedFoodItems.reduce(
+      (sum, item) => sum + (item.calories || 0),
+      0
+    );
     const mealInfo = {
       mealName,
       MealType,
@@ -130,6 +134,9 @@ export const getRecentMealSummaries = (
         const summaries: MealSummary[] = fullMeals.map((doc) => ({
           id: doc.id,
           mealName: doc.data.mealName,
+          mealTime: doc.data.mealTime,
+          totalCalories: doc.data.totalCalories || 0,
+          mealType: doc.data.mealType || doc.data.mealType || 'meal',
         }));
 
         onUpdate(summaries);

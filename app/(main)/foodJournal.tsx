@@ -3,6 +3,7 @@ import { useUserInfo } from "@/hooks/useUserInfo";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
@@ -14,23 +15,19 @@ import {
 } from "react-native";
 
 import {
-  fontSize,
-  fontWeight,
-  neutralColors,
-  radius,
   spacing,
-  useThemeColors,
+  useThemeColors
 } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { checkForAllergens, getAllergenAlertMessage, getSeverityText } from "@/utils/allergen.detector";
-import { addMeal, getRecentMealSummaries } from "@/utils/foodjournal.repo";
+import { addMeal, deleteMealByID, getMealDetailsById, getRecentMealSummaries } from "@/utils/foodjournal.repo";
 import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import {
   FoodItem,
+  MealDetails,
   MealSummary,
   ProductData,
 } from "@/utils/types/foodJournal.types";
-import { Link } from "expo-router";
 
 export type NewFoodItem = Omit<FoodItem, "foodItemId">;
 
@@ -55,6 +52,12 @@ export default function FoodJournal() {
   const [foodItemCount, setFoodItemCount] = useState(0);
   const [showScanner, setShowScanner] = useState(false);
   const [showAddMealModal, setShowAddMealModal] = useState(false);
+
+  // Meal Details Modal States
+  const [showMealDetailsModal, setShowMealDetailsModal] = useState(false);
+  const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
+  const [selectedMealDetails, setSelectedMealDetails] = useState<MealDetails | null>(null);
+  const [loadingMealDetails, setLoadingMealDetails] = useState(false);
 
   const [mealSummary, setMealSummary] = useState<MealSummary[]>([]);
 
@@ -97,20 +100,18 @@ export default function FoodJournal() {
   // Handles allergy checking and shows appropriate alerts
   const handleProductScanned = (product: ProductData) => {
     setShowScanner(false);
-    // Don't reopen form modal yet - wait for user to choose from alert
     setShowAddMealModal(false);
     const prohibited = userData.profile?.prohibitedIngredients || [];
-const allergenMatches = checkForAllergens(product.ingredients, prohibited);
+    const allergenMatches = checkForAllergens(product.ingredients, prohibited);
 
-// If allergens found, show warning with confirmation
-if (allergenMatches.length > 0) {
-  const alertMessage = getAllergenAlertMessage(allergenMatches);
-  const highestSeverity = Math.max(...allergenMatches.map(m => m.severity));
-  const severityText = getSeverityText(highestSeverity);
-  
-  Alert.alert(
-    `🚨 ${severityText} ALLERGEN WARNING`,
-    `${product.productName}\n\n${alertMessage}\n\n⚠️ DISCLAIMER: Always verify ingredients on the physical product label.`,
+    if (allergenMatches.length > 0) {
+      const alertMessage = getAllergenAlertMessage(allergenMatches);
+      const highestSeverity = Math.max(...allergenMatches.map(m => m.severity));
+      const severityText = getSeverityText(highestSeverity);
+      
+      Alert.alert(
+        `🚨 ${severityText} ALLERGEN WARNING`,
+        `${product.productName}\n\n${alertMessage}\n\n⚠️ DISCLAIMER: Always verify ingredients on the physical product label.`,
         [
           {
             text: "Close",
@@ -120,7 +121,6 @@ if (allergenMatches.length > 0) {
             text: "Add Anyway",
             style: "destructive",
             onPress: () => {
-              // Show second confirmation alert
               Alert.alert(
                 "Are you sure?",
                 "This product contains ingredients you've marked as prohibited. Add to meal anyway?",
@@ -139,7 +139,6 @@ if (allergenMatches.length > 0) {
         ]
       );
     } else {
-      // No allergens, show safe message
       Alert.alert(
         "✅ No Known Allergens Detected",
         `${product.productName}\n\nNo prohibited ingredients detected.\n\n⚠️ DISCLAIMER: Always verify ingredients on the physical product label.`,
@@ -152,20 +151,21 @@ if (allergenMatches.length > 0) {
   };
 
   const handleAddItem = () => {
-    if (!currentFoodItem.foodName) {
-      console.log("Can't add food item with no name");
+    if (!currentFoodItem.foodName || currentFoodItem.foodName.trim() === '') {
+      Alert.alert(
+        "Missing Food Name",
+        "Please enter a food name before adding the item to your meal."
+      );
       return;
     }
 
     const itemToAdd = {
       ...currentFoodItem,
-      tempClientId: Date.now(), // Generate the unique ID here
+      tempClientId: Date.now(),
     };
 
-    // add current foodItem to array
     setFoodItems([...foodItems, itemToAdd]);
 
-    // // 2. Clear the input fields by resetting the current food item state
     setCurrentFoodItem({
       tempClientId: undefined,
       foodName: "",
@@ -176,7 +176,6 @@ if (allergenMatches.length > 0) {
       sugar: undefined,
     });
 
-    // // 3. Increment the item counter for the UI (e.g., "Food Item #2")
     setFoodItemCount((foodItemCount) => foodItemCount + 1);
   };
 
@@ -184,9 +183,50 @@ if (allergenMatches.length > 0) {
     const newFoodItems = foodItems.filter(
       (item) => item.tempClientId !== clientIdToDelete
     );
-
-    // Update the state with the new array.
     setFoodItems(newFoodItems);
+  };
+
+  // Handle meal click to show details modal
+  const handleMealClick = async (mealId: string) => {
+    setSelectedMealId(mealId);
+    setShowMealDetailsModal(true);
+    setLoadingMealDetails(true);
+    
+    try {
+      const details = await getMealDetailsById(mealId);
+      setSelectedMealDetails(details);
+    } catch (error) {
+      console.error("Error loading meal details:", error);
+      Alert.alert("Error", "Failed to load meal details");
+    } finally {
+      setLoadingMealDetails(false);
+    }
+  };
+
+  const handleDeleteMeal = async () => {
+    if (!selectedMealId) return;
+    
+    Alert.alert(
+      "Delete Meal",
+      "Are you sure you want to delete this meal?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteMealByID(selectedMealId);
+              setShowMealDetailsModal(false);
+              setSelectedMealDetails(null);
+              setSelectedMealId(null);
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete meal");
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (!currentUser) return;
@@ -196,7 +236,6 @@ if (allergenMatches.length > 0) {
     try {
       const temp = await addMeal(mealName, mealType, uid, foodItems);
 
-      // Update daily nutrition data
       try {
         await calculateDailyNutritionFromMeals(uid, new Date());
       } catch (nutritionError) {
@@ -227,79 +266,86 @@ if (allergenMatches.length > 0) {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: "#f5f5f5",
     },
     header: {
-      padding: spacing.lg,
-      backgroundColor: colors.surface,
+      backgroundColor: "#fff",
+      padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: "#e0e0e0",
     },
     headerTitle: {
-      fontSize: fontSize.xxl,
-      fontWeight: fontWeight.bold,
-      color: colors.text,
-      marginBottom: spacing.xs,
+      fontSize: 28,
+      fontWeight: "bold",
+      color: "#000",
+      marginBottom: 4,
     },
     headerSubtitle: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
+      fontSize: 14,
+      color: "#666",
     },
     content: {
-      padding: spacing.lg,
+      padding: 16,
     },
     addButton: {
-      backgroundColor: colors.pastelGreen,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
-      borderRadius: radius.md,
+      backgroundColor: "#2196F3",
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      borderRadius: 12,
       alignItems: "center",
       flexDirection: "row",
       justifyContent: "center",
-      gap: spacing.sm,
-      marginBottom: spacing.lg,
+      gap: 8,
+      marginBottom: 16,
+      shadowColor: "#2196F3",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
     },
     addButtonText: {
-      color: colors.pastelGreenText,
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "600",
     },
     foodItemCard: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
-      padding: spacing.lg,
-      marginBottom: spacing.md,
+      backgroundColor: "#fff",
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      shadowColor: neutralColors.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+      elevation: 1,
+      borderWidth: 1,
+      borderColor: "#F0F0F0",
     },
     foodItemName: {
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-      marginBottom: spacing.xs,
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#000",
+      marginBottom: 4,
     },
     foodItemMacros: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
+      fontSize: 13,
+      color: "#666",
     },
     foodItemCalories: {
-      fontSize: fontSize.xl,
-      fontWeight: fontWeight.bold,
-      color: colors.primary,
+      fontSize: 20,
+      fontWeight: "bold",
+      color: "#FF5722",
     },
     foodItemCaloriesLabel: {
-      fontSize: fontSize.xs,
-      color: colors.textTertiary,
-      marginTop: spacing.xs,
+      fontSize: 11,
+      color: "#999",
+      marginTop: 4,
     },
     deleteButton: {
-      backgroundColor: colors.error,
+      backgroundColor: "#F44336",
       width: 28,
       height: 28,
       borderRadius: 14,
@@ -312,7 +358,7 @@ if (allergenMatches.length > 0) {
       justifyContent: 'space-between',
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: '#E5E7EB',
+      borderColor: '#D1D5DB',
       borderRadius: 8,
       backgroundColor: '#fff',
       paddingHorizontal: 16,
@@ -320,7 +366,7 @@ if (allergenMatches.length > 0) {
     },
     dropdownButtonText: {
       fontSize: 16,
-      color: '#333',
+      color: '#111',
     },
     pickerModalOverlay: {
       flex: 1,
@@ -376,14 +422,20 @@ if (allergenMatches.length > 0) {
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "flex-end",
+      justifyContent: "center",
+      alignItems: "center",
     },
     modalContent: {
-      backgroundColor: colors.surface,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
-      padding: spacing.xl,
+      backgroundColor: "#F9FAFB",
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      padding: 20,
       maxHeight: "90%",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5,
     },
     modalHeader: {
       flexDirection: "row",
@@ -392,117 +444,243 @@ if (allergenMatches.length > 0) {
       marginBottom: spacing.lg,
     },
     modalTitle: {
-      fontSize: fontSize.xxl,
-      fontWeight: fontWeight.bold,
-      color: colors.text,
+      fontSize: 24,
+      fontWeight: "bold",
+      color: "#000",
+      marginBottom: 20,
     },
     closeButton: {
       padding: spacing.sm,
     },
     closeButtonText: {
-      fontSize: fontSize.xl,
-      color: colors.textSecondary,
+      fontSize: 20,
+      color: "#666",
     },
     formSection: {
-      marginBottom: spacing.lg,
+      marginBottom: 16,
     },
     label: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-      marginBottom: spacing.sm,
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#000",
+      marginBottom: 8,
     },
     input: {
       borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.backgroundSecondary,
+      borderColor: '#D1D5DB',
+      backgroundColor: '#fff',
       padding: spacing.md,
-      borderRadius: radius.md,
-      fontSize: fontSize.md,
-      color: colors.text,
+      borderRadius: 8,
+      fontSize: 16,
+      color: "#111",
     },
     scanButton: {
-      backgroundColor: colors.pastelGreen,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.lg,
-      borderRadius: radius.md,
+      backgroundColor: "#4CAF50",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
       alignItems: "center",
-      marginVertical: spacing.md,
+      marginVertical: 12,
       flexDirection: "row",
       justifyContent: "center",
-      gap: spacing.sm,
+      gap: 8,
+      shadowColor: "#4CAF50",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      elevation: 2,
     },
     scanButtonText: {
-      color: colors.pastelGreenText,
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "600",
     },
     secondaryButton: {
-      backgroundColor: colors.backgroundTertiary,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.lg,
-      borderRadius: radius.md,
+      backgroundColor: "#2196F3",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
       alignItems: "center",
-      marginTop: spacing.md,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: "#1976D2",
       flexDirection: "row",
       justifyContent: "center",
-      gap: spacing.sm,
+      gap: 8,
+      shadowColor: "#2196F3",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      elevation: 2,
     },
     secondaryButtonText: {
-      color: colors.text,
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "600",
     },
     submitButton: {
-      backgroundColor: colors.pastelGreen,
-      paddingVertical: spacing.lg,
-      paddingHorizontal: spacing.xl,
-      borderRadius: radius.md,
+      backgroundColor: "#4CAF50",
+      paddingVertical: 14,
+      paddingHorizontal: 20,
+      borderRadius: 12,
       alignItems: "center",
-      marginTop: spacing.xl,
+      marginTop: 24,
       flexDirection: "row",
       justifyContent: "center",
-      gap: spacing.sm,
+      gap: 8,
+      shadowColor: "#4CAF50",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 3,
     },
     submitButtonText: {
-      color: colors.pastelGreenText,
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "bold",
     },
     emptyState: {
       alignItems: "center",
-      padding: spacing.xxl,
+      padding: 40,
     },
     emptyStateText: {
-      fontSize: fontSize.md,
-      color: colors.textSecondary,
+      fontSize: 16,
+      color: "#666",
       textAlign: "center",
-      marginTop: spacing.md,
+      marginTop: 12,
     },
     mealSummarySection: {
       marginTop: spacing.xl,
     },
     mealSummaryTitle: {
-      fontSize: fontSize.xl,
-      fontWeight: fontWeight.bold,
-      color: colors.text,
-      marginBottom: spacing.md,
+      fontSize: 20,
+      fontWeight: "bold",
+      color: "#000",
+      marginBottom: 12,
     },
     mealSummaryCard: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
-      padding: spacing.lg,
-      marginBottom: spacing.md,
-      shadowColor: neutralColors.black,
+      backgroundColor: "#fff",
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,
       shadowRadius: 2,
       elevation: 1,
+      borderWidth: 1,
+      borderColor: "#F0F0F0",
     },
     mealSummaryName: {
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#000",
+    },
+    mealCardContent: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      width: "100%",
+    },
+    mealHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 4,
+    },
+    mealDateText: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: "#2196F3",
+    },
+    mealTimeText: {
+      fontSize: 13,
+      color: "#666",
+      marginTop: 4,
+    },
+    mealCalories: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: "#FF5722",
+    },
+    // Meal Details Modal Styles
+    mealDetailsModal: {
+      backgroundColor: '#fff',
+      borderRadius: 16,
+      width: '90%',
+      maxHeight: '80%',
+      marginHorizontal: '5%',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    mealDetailsHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+    },
+    mealDetailsTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#000',
+      flex: 1,
+    },
+    loadingContainer: {
+      padding: 40,
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 12,
+      fontSize: 14,
+      color: '#666',
+    },
+    mealDetailsContent: {
+      padding: 20,
+    },
+    foodItemsTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#000',
+      marginBottom: 12,
+    },
+    foodDetailCard: {
+      backgroundColor: '#F9FAFB',
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+    },
+    foodDetailName: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#000',
+      marginBottom: 8,
+    },
+    foodDetailText: {
+      fontSize: 14,
+      color: '#666',
+      marginTop: 4,
+    },
+    deleteMealButton: {
+      backgroundColor: '#F44336',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 14,
+      borderRadius: 12,
+      marginTop: 20,
+      gap: 8,
+    },
+    deleteMealButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
     },
   });
 
@@ -525,7 +703,7 @@ if (allergenMatches.length > 0) {
           <Ionicons
             name="restaurant"
             size={20}
-            color={colors.pastelGreenText}
+            color="#fff"
           />
           <Text style={styles.addButtonText}>Add Meal</Text>
         </TouchableOpacity>
@@ -535,9 +713,9 @@ if (allergenMatches.length > 0) {
           <>
             <Text
               style={{
-                fontSize: fontSize.lg,
-                fontWeight: fontWeight.semibold,
-                color: colors.text,
+                fontSize: 18,
+                fontWeight: "600",
+                color: "#000",
                 marginBottom: spacing.md,
               }}
             >
@@ -564,7 +742,7 @@ if (allergenMatches.length > 0) {
                     <Ionicons
                       name="close"
                       size={16}
-                      color={colors.textInverse}
+                      color="#fff"
                     />
                   </TouchableOpacity>
                 </View>
@@ -573,37 +751,114 @@ if (allergenMatches.length > 0) {
           </>
         )}
 
-        {/* Empty State - Only show when no current meal AND no recent meals */}
+        {/* Empty State */}
         {foodItems.length === 0 &&
           (!mealSummary || mealSummary.length === 0) && (
             <View style={styles.emptyState}>
               <Ionicons
                 name="restaurant-outline"
                 size={64}
-                color={colors.textTertiary}
+                color="#999"
               />
               <Text style={styles.emptyStateText}>
-                No meals added yet.{"\n"}Tap &quot;Add Meal&quot; to get
-                started!
+                No meals added yet.{"\n"}Tap "Add Meal" to get started!
               </Text>
             </View>
           )}
 
-        {/* Previous Meals Section - from team's version */}
-        {mealSummary && mealSummary.length > 0 && (
-          <View style={styles.mealSummarySection}>
-            <Text style={styles.mealSummaryTitle}>Recent Meals</Text>
-            {mealSummary.map((item) => (
-              <Link key={item.id} href={`./meals/${item.id}`} asChild>
-                <TouchableOpacity style={styles.mealSummaryCard}>
-                  <Text style={styles.mealSummaryName}>
-                    {item.mealName || "Unnamed Meal"}
-                  </Text>
-                </TouchableOpacity>
-              </Link>
-            ))}
-          </View>
-        )}
+        {/* Today's Meals & Past Meals Sections */}
+        {mealSummary && mealSummary.length > 0 && (() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const todaysMeals = mealSummary.filter(meal => {
+            const mealDate = meal.mealTime.toDate();
+            mealDate.setHours(0, 0, 0, 0);
+            return mealDate.getTime() === today.getTime();
+          });
+          
+          const pastMeals = mealSummary.filter(meal => {
+            const mealDate = meal.mealTime.toDate();
+            mealDate.setHours(0, 0, 0, 0);
+            return mealDate.getTime() < today.getTime();
+          });
+          
+          return (
+            <>
+              {/* Today's Meals Section */}
+              {todaysMeals.length > 0 && (
+                <View style={styles.mealSummarySection}>
+                  <Text style={styles.mealSummaryTitle}>Today's Meals</Text>
+                  {todaysMeals.map((item) => (
+                    <TouchableOpacity 
+                      key={item.id}
+                      style={styles.mealSummaryCard}
+                      onPress={() => handleMealClick(item.id)}
+                    >
+                      <View style={styles.mealCardContent}>
+                        <View>
+                          <Text style={styles.mealSummaryName}>
+                            {item.mealName || "Unnamed Meal"}
+                          </Text>
+                          <Text style={styles.mealTimeText}>
+                            {item.mealTime.toDate().toLocaleTimeString('en-US', { 
+                              hour: 'numeric', 
+                              minute: '2-digit',
+                              hour12: true 
+                            })}
+                          </Text>
+                        </View>
+                        {item.totalCalories > 0 && (
+                          <Text style={styles.mealCalories}>{item.totalCalories} cal</Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              
+              {/* Past Meals Section */}
+              {pastMeals.length > 0 && (
+                <View style={styles.mealSummarySection}>
+                  <Text style={styles.mealSummaryTitle}>Past Meals</Text>
+                  {pastMeals.map((item) => (
+                    <TouchableOpacity 
+                      key={item.id}
+                      style={styles.mealSummaryCard}
+                      onPress={() => handleMealClick(item.id)}
+                    >
+                      <View style={styles.mealCardContent}>
+                        <View>
+                          <View style={styles.mealHeaderRow}>
+                            <Text style={styles.mealDateText}>
+                              {item.mealTime.toDate().toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}
+                            </Text>
+                            <Text style={styles.mealSummaryName}>
+                              {item.mealName || "Unnamed Meal"}
+                            </Text>
+                          </View>
+                          <Text style={styles.mealTimeText}>
+                            {item.mealTime.toDate().toLocaleTimeString('en-US', { 
+                              hour: 'numeric', 
+                              minute: '2-digit',
+                              hour12: true 
+                            })}
+                          </Text>
+                        </View>
+                        {item.totalCalories > 0 && (
+                          <Text style={styles.mealCalories}>{item.totalCalories} cal</Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </>
+          );
+        })()}
       </ScrollView>
 
       {/* Add Meal Modal */}
@@ -621,7 +876,7 @@ if (allergenMatches.length > 0) {
                 style={styles.closeButton}
                 onPress={() => setShowAddMealModal(false)}
               >
-                <Ionicons name="close" size={28} color={colors.textSecondary} />
+                <Ionicons name="close" size={28} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -632,7 +887,7 @@ if (allergenMatches.length > 0) {
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., Breakfast Bowl"
-                  placeholderTextColor={colors.textTertiary}
+                  placeholderTextColor="#999"
                   value={mealName}
                   onChangeText={setMealName}
                 />
@@ -656,10 +911,10 @@ if (allergenMatches.length > 0) {
               <View style={styles.formSection}>
                 <Text
                   style={{
-                    fontSize: fontSize.lg,
-                    fontWeight: fontWeight.bold,
-                    color: colors.text,
-                    marginBottom: spacing.md,
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: "#000",
+                    marginBottom: 12,
                   }}
                 >
                   Food Item {foodItemCount + 1}
@@ -673,7 +928,7 @@ if (allergenMatches.length > 0) {
                   <Ionicons
                     name="scan"
                     size={20}
-                    color={colors.pastelGreenText}
+                    color="#fff"
                   />
                   <Text style={styles.scanButtonText}>Scan Barcode</Text>
                 </TouchableOpacity>
@@ -684,7 +939,7 @@ if (allergenMatches.length > 0) {
                   <TextInput
                     style={styles.input}
                     placeholder="Food Name"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="#999"
                     value={currentFoodItem.foodName.toString()}
                     onChangeText={(text) => handleInputChange("foodName", text)}
                   />
@@ -696,7 +951,7 @@ if (allergenMatches.length > 0) {
                   <TextInput
                     style={styles.input}
                     placeholder="Calories"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="#999"
                     keyboardType="numeric"
                     value={currentFoodItem.calories?.toString()}
                     onChangeText={(text) => handleInputChange("calories", text)}
@@ -709,7 +964,7 @@ if (allergenMatches.length > 0) {
                   <TextInput
                     style={styles.input}
                     placeholder="Sugar (g)"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="#999"
                     keyboardType="numeric"
                     value={currentFoodItem.sugar?.toString()}
                     onChangeText={(text) => handleInputChange("sugar", text)}
@@ -722,7 +977,7 @@ if (allergenMatches.length > 0) {
                   <TextInput
                     style={styles.input}
                     placeholder="Carbs (mg)"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="#999"
                     keyboardType="numeric"
                     value={currentFoodItem.carbs?.toString()}
                     onChangeText={(text) => handleInputChange("carbs", text)}
@@ -735,7 +990,7 @@ if (allergenMatches.length > 0) {
                   <TextInput
                     style={styles.input}
                     placeholder="Fat (g)"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="#999"
                     keyboardType="numeric"
                     value={currentFoodItem.fat?.toString()}
                     onChangeText={(text) => handleInputChange("fat", text)}
@@ -748,7 +1003,7 @@ if (allergenMatches.length > 0) {
                   <TextInput
                     style={styles.input}
                     placeholder="Protein (g)"
-                    placeholderTextColor={colors.textTertiary}
+                    placeholderTextColor="#999"
                     keyboardType="numeric"
                     value={currentFoodItem.protein?.toString()}
                     onChangeText={(text) => handleInputChange("protein", text)}
@@ -760,7 +1015,7 @@ if (allergenMatches.length > 0) {
                   style={styles.secondaryButton}
                   onPress={handleAddItem}
                 >
-                  <Ionicons name="add-circle" size={20} color={colors.text} />
+                  <Ionicons name="add-circle" size={20} color="#fff" />
                   <Text style={styles.secondaryButtonText}>
                     Add Item to Meal
                   </Text>
@@ -803,11 +1058,96 @@ if (allergenMatches.length > 0) {
                 <Ionicons
                   name="checkmark-circle"
                   size={24}
-                  color={colors.pastelGreenText}
+                  color="#fff"
                 />
                 <Text style={styles.submitButtonText}>Submit Meal</Text>
               </TouchableOpacity>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Meal Details Modal */}
+      <Modal
+        visible={showMealDetailsModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowMealDetailsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.mealDetailsModal}>
+            {/* Header */}
+            <View style={styles.mealDetailsHeader}>
+              <Text style={styles.mealDetailsTitle}>
+                {selectedMealDetails?.mealName || "Meal Details"}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowMealDetailsModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Loading State */}
+            {loadingMealDetails && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#2196F3" />
+                <Text style={styles.loadingText}>Loading meal details...</Text>
+              </View>
+            )}
+
+            {/* Meal Details Content */}
+            {!loadingMealDetails && selectedMealDetails && (
+              <ScrollView style={styles.mealDetailsContent}>
+                <Text style={styles.foodItemsTitle}>Food Items:</Text>
+                
+                {selectedMealDetails.foodItems.map((item, index) => (
+                  <View key={index} style={styles.foodDetailCard}>
+                    <Text style={styles.foodDetailName}>{item.foodName}</Text>
+                    
+                    {item.calories != null && (
+                      <Text style={styles.foodDetailText}>
+                        Calories: {item.calories}
+                      </Text>
+                    )}
+                    
+                    {item.protein != null && (
+                      <Text style={styles.foodDetailText}>
+                        Protein: {item.protein}g
+                      </Text>
+                    )}
+                    
+                    {item.carbs != null && (
+                      <Text style={styles.foodDetailText}>
+                        Carbs: {item.carbs}g
+                      </Text>
+                    )}
+                    
+                    {item.fat != null && (
+                      <Text style={styles.foodDetailText}>
+                        Fat: {item.fat}g
+                      </Text>
+                    )}
+                    
+                    {item.sugar != null && (
+                      <Text style={styles.foodDetailText}>
+                        Sugar: {item.sugar}g
+                      </Text>
+                    )}
+                  </View>
+                ))}
+
+                {/* Delete Button */}
+                <TouchableOpacity
+                  style={styles.deleteMealButton}
+                  onPress={handleDeleteMeal}
+                >
+                  <Ionicons name="trash" size={20} color="#fff" />
+                  <Text style={styles.deleteMealButtonText}>Delete Meal</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>

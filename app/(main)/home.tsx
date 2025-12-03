@@ -1,7 +1,6 @@
 import { useThemeColors } from "@/assets/styles";
 import { AppLogo } from "@/components/AppLogo";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
-import { Button } from "@/components/button";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
 import { checkForAllergens, getAllergenAlertMessage, getSeverityText } from "@/utils/allergen.detector";
@@ -432,32 +431,6 @@ export default function Home() {
           )}
 
           <Text style={styles.goalHint}>💡 Long press any goal to delete</Text>
-        </View>
-
-        {/* Navigation Buttons */}
-        <View style={styles.actionsColumn}>
-          <Button
-            title="Food Journal"
-            onPress={() => router.push("./foodJournal")}
-            size="lg"
-            bg={colors.pastelGreen}
-            color={colors.pastelGreenText}
-          />
-
-          <Button
-            title="Health Tracking"
-            onPress={() => router.push("./healthTracking")}
-            size="lg"
-            bg="#000000"
-          />
-
-          <Button
-            title="Nutrition Tracking"
-            onPress={() => router.push("./nutritionTracking")}
-            size="lg"
-            bg={colors.pastelGreen}
-            color={colors.pastelGreenText}
-          />
         </View>
       </ScrollView>
 

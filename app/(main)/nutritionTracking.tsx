@@ -345,24 +345,6 @@ export default function NutritionTracking() {
                 <Text style={styles.macroLabel}>fat</Text>
               </View>
             </View>
-      
-            <View style={styles.mealTypeTracker}>
-              <Text style={styles.mealTypeLabel}>Meals logged:</Text>
-              <View style={styles.mealTypeDots}>
-                <View style={[styles.mealDot, todayData.mealTypes.breakfast && styles.mealDotActive]}>
-                  <Text style={[styles.mealDotText, todayData.mealTypes.breakfast && styles.mealDotTextActive]}>B</Text>
-                </View>
-                <View style={[styles.mealDot, todayData.mealTypes.lunch && styles.mealDotActive]}>
-                  <Text style={[styles.mealDotText, todayData.mealTypes.lunch && styles.mealDotTextActive]}>L</Text>
-                </View>
-                <View style={[styles.mealDot, todayData.mealTypes.dinner && styles.mealDotActive]}>
-                  <Text style={[styles.mealDotText, todayData.mealTypes.dinner && styles.mealDotTextActive]}>D</Text>
-                </View>
-                <View style={[styles.mealDot, todayData.mealTypes.snack && styles.mealDotActive]}>
-                  <Text style={[styles.mealDotText, todayData.mealTypes.snack && styles.mealDotTextActive]}>S</Text>
-                </View>
-              </View>
-            </View>
           </>
         ) : (
           <View style={styles.emptyToday}>
