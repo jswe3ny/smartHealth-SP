@@ -1,8 +1,5 @@
 import { AuthorProfile, BlogPost } from "@/utils/types/blog.types";
-import { getAuth } from "@react-native-firebase/auth";
-import { Timestamp } from "@react-native-firebase/firestore";
 import {
-  add,
   getCollection,
   getDocWithId,
   listenCollection,
@@ -22,7 +19,7 @@ export const subscribeToMainFeed = (onUpdate: (posts: BlogPost[]) => void) => {
 
   return listenCollection<BlogPost>(POSTS_COLLECTION, options, (docs) => {
     const posts = docs.map((docWrapper) => ({
-      ...docWrapper.data, // The content (title, content, etc.)
+      ...docWrapper.data,
       postId: docWrapper.id,
     }));
 
@@ -31,6 +28,7 @@ export const subscribeToMainFeed = (onUpdate: (posts: BlogPost[]) => void) => {
 };
 
 // --- POST DETAILS LOGIC ---
+
 export const getPostDetails = async (
   postId: string
 ): Promise<BlogPost | null> => {
@@ -58,6 +56,9 @@ export const getAuthorProfile = async (
   return { ...doc.data, uid: doc.id };
 };
 
+/**
+ * Fetches all posts by a specific author.
+ */
 export const getPostsByAuthor = async (
   authorId: string
 ): Promise<BlogPost[]> => {
@@ -69,34 +70,4 @@ export const getPostsByAuthor = async (
   const docs = await getCollection<BlogPost>(POSTS_COLLECTION, options);
 
   return docs.map((doc) => ({ ...doc.data, postId: doc.id }));
-};
-
-// --- CREATION LOGIC ---
-
-export const createPost = async (
-  title: string,
-  content: string,
-  isVerified: boolean
-) => {
-  const currentUser = getAuth().currentUser;
-  if (!currentUser) throw new Error("Must be logged in");
-
-  // Enforce verification rule
-  if (!isVerified) {
-    throw new Error("Only verified organizations can post.");
-  }
-
-  const newPost: Omit<BlogPost, "postId"> = {
-    authorId: currentUser.uid,
-    authorName: currentUser.displayName || "Unknown Org",
-    isVerifiedOrg: isVerified,
-    title,
-    content,
-    // Create a simple summary from the first 100 characters
-    summary: content.length > 100 ? content.substring(0, 100) + "..." : content,
-    timestamp: Timestamp.now(),
-  };
-
-  // Uses the `add` helper directly
-  return add(POSTS_COLLECTION, newPost);
 };
