@@ -13,10 +13,13 @@ export default function AppLayout() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: true }}>
-        <Stack.Screen name="home" />
-        <Stack.Screen name="foodJournal" />
-        <Stack.Screen name="healthTracking" />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="home" options={{ headerShown: true }} />
+        <Stack.Screen name="foodJournal" options={{ headerShown: true }} />
+        <Stack.Screen name="healthTracking" options={{ headerShown: true }} />
+        <Stack.Screen name="blog/feed" options={{ headerShown: false, title: "Food Pantry Blog" }} />
+        <Stack.Screen name="blog/post/[postId]" options={{ headerShown: false }} />
+        <Stack.Screen name="blog/author/[authorId]" options={{ headerShown: false }} />
       </Stack>
     </SafeAreaView>
   );

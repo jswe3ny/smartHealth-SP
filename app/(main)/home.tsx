@@ -4,9 +4,10 @@ import { Button } from "@/components/button";
 import { GoalContainer } from "@/components/GoalContainer";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Home() {
   const { accountSignOut, currentUser } = useAuth();
@@ -41,34 +42,53 @@ export default function Home() {
         <GoalContainer goals={userData.profile?.currentGoals} id={currentUser?.uid} />
 
         <View style={styles.actionsColumn}>
-          <Button
-            title="Food Journal"
-            onPress={() => {
-              router.push("./foodJournal");
-            }}
-            size="lg"
-            bg={colors.pastelGreen}
-            color={colors.pastelGreenText}
-          />
+          {/* Food Journal Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.greenButton]}
+            onPress={() => router.push("./foodJournal")}
+            activeOpacity={0.9}
+          >
+            <View style={[styles.iconContainer, styles.greenIconBg]}>
+              <Ionicons name="restaurant" size={20} color={colors.pastelGreenText} />
+            </View>
+            <Text style={[styles.actionButtonText, styles.greenText]}>Food Journal</Text>
+          </TouchableOpacity>
 
-          <Button
-            title="Scan Barcode"
-            onPress={() => {
-              router.push("./barcodeScanner");
-            }}
-            size="lg"
-            bg={colors.pastelGreen}
-            color={colors.pastelGreenText}
-          />
+          {/* Scan Barcode Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.greenButton]}
+            onPress={() => router.push("./barcodeScanner")}
+            activeOpacity={0.9}
+          >
+            <View style={[styles.iconContainer, styles.greenIconBg]}>
+              <Ionicons name="barcode" size={20} color={colors.pastelGreenText} />
+            </View>
+            <Text style={[styles.actionButtonText, styles.greenText]}>Scan Barcode</Text>
+          </TouchableOpacity>
 
-          <Button
-            title="Health Tracking"
-            onPress={() => {
-              router.push("./healthTracking");
-            }}
-            size="lg"
-            bg="#000000"
-          />
+          {/* Health Tracking Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.blackButton]}
+            onPress={() => router.push("./healthTracking")}
+            activeOpacity={0.9}
+          >
+            <View style={[styles.iconContainer, styles.whiteIconBg]}>
+              <Ionicons name="barbell" size={20} color="#000000" />
+            </View>
+            <Text style={[styles.actionButtonText, styles.whiteText]}>Health Tracking</Text>
+          </TouchableOpacity>
+
+          {/* Food Pantry Blog Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.blueButton]}
+            onPress={() => router.push("./blog/feed")}
+            activeOpacity={0.9}
+          >
+            <View style={[styles.iconContainer, styles.goldIconBg]}>
+              <Ionicons name="nutrition" size={20} color="#003594" />
+            </View>
+            <Text style={[styles.actionButtonText, styles.whiteText]}>Food Pantry Blog</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -112,4 +132,50 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   actionsColumn: { gap: 12, marginTop: 12 },
+  
+  // Action Buttons
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    gap: 12,
+  },
+  greenButton: {
+    backgroundColor: "#C8E6C9",
+  },
+  blackButton: {
+    backgroundColor: "#000000",
+  },
+  blueButton: {
+    backgroundColor: "#003594",
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  greenIconBg: {
+    backgroundColor: "rgba(46, 125, 50, 0.15)",
+  },
+  whiteIconBg: {
+    backgroundColor: "#FFFFFF",
+  },
+  goldIconBg: {
+    backgroundColor: "#FFC72C",
+  },
+  actionButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  greenText: {
+    color: "#2E7D32",
+  },
+  whiteText: {
+    color: "#FFFFFF",
+  },
 });
