@@ -4,7 +4,10 @@ import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
 import { checkForAllergens, getAllergenAlertMessage, getSeverityText } from "@/utils/allergen.detector";
+import { getLastWeekHealthData } from "@/utils/health.repo";
+import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import { ProductData } from "@/utils/types/foodJournal.types";
+import { DailyHealthData } from "@/utils/types/health.types";
 import { Goal } from "@/utils/types/user.types";
 import { updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,6 +17,7 @@ import React, { useState } from "react";
 import {
   Alert,
   Modal,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -33,6 +37,11 @@ export default function Home() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProductDetailsModal, setShowProductDetailsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(null);
+  const [healthData, setHealthData] = useState<DailyHealthData | null>(null);
+  const [nutritionData, setNutritionData] = useState<any>(null);
+  const [showEditGoalModal, setShowEditGoalModal] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [newGoal, setNewGoal] = useState({
     name: "",
     description: "",
@@ -42,6 +51,48 @@ export default function Home() {
 
   if (!currentUser) return null;
 
+  // Fetch health and nutrition data
+  const fetchData = React.useCallback(async () => {
+    if (!currentUser?.uid) return;
+
+    try {
+      const weekData = await getLastWeekHealthData(currentUser.uid);
+      
+      // Find TODAY's data specifically
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const todayData = weekData.find(day => {
+        const dayDate = day.date.toDate();
+        dayDate.setHours(0, 0, 0, 0);
+        return dayDate.getTime() === today.getTime();
+      });
+      
+      // If today's data exists, use it; otherwise use the most recent
+      if (todayData) {
+        setHealthData(todayData);
+      } else if (weekData.length > 0) {
+        setHealthData(weekData[weekData.length - 1]);
+      }
+
+      const nutritionResult = await calculateDailyNutritionFromMeals(currentUser.uid, new Date());
+      setNutritionData(nutritionResult);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }, [currentUser?.uid]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Pull to refresh handler
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
+
   // Get today's date
   const today = new Date();
   const dateString = today.toLocaleDateString("en-US", {
@@ -50,15 +101,7 @@ export default function Home() {
     day: "numeric",
   });
 
-  // Mock today's progress 
-  const todayProgress = {
-    steps: 8432,
-    stepsGoal: userData.profile?.currentGoals?.find(g => g.type === "steps")?.targetValue || 10000,
-    calories: 1850,
-    caloriesGoal: userData.profile?.currentGoals?.find(g => g.type === "totalCalories")?.targetValue || 2000,
-    protein: 95,
-    proteinGoal: userData.profile?.currentGoals?.find(g => g.type === "protein")?.targetValue || 150,
-  };
+
 
   const currentGoalCount = userData.profile?.currentGoals?.length || 0;
 
@@ -130,6 +173,17 @@ export default function Home() {
       return;
     }
 
+    // Check if goal type already exists
+    const existingGoal = userData.profile?.currentGoals?.find(g => g.type === newGoal.type);
+    if (existingGoal) {
+      Alert.alert(
+        "Duplicate Goal Type",
+        `You already have a ${newGoal.type} goal named "${existingGoal.name}". Each goal type can only be set once.`,
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     try {
       const goalData: Goal = {
         name: newGoal.name,
@@ -182,8 +236,96 @@ export default function Home() {
     );
   };
 
+  // Handle Edit Goal
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setNewGoal({
+      name: goal.name || "",
+      description: goal.description || "",
+      type: goal.type || "",
+      targetValue: goal.targetValue?.toString() || "",
+    });
+    setShowEditGoalModal(true);
+  };
+
+  // Handle Save Edited Goal
+  const handleSaveEditedGoal = async () => {
+    if (!currentUser || !editingGoal || !newGoal.name || !newGoal.type) {
+      Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+
+    // Check if goal type already exists (but allow if it's the same goal being edited)
+    const existingGoal = userData.profile?.currentGoals?.find(
+      g => g.type === newGoal.type && g.goalId !== editingGoal.goalId
+    );
+    if (existingGoal) {
+      Alert.alert(
+        "Duplicate Goal Type",
+        `You already have a ${newGoal.type} goal named "${existingGoal.name}". Each goal type can only be set once.`,
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    try {
+      const { updateGoalInArray } = require("@/utils/user.repo");
+      
+      const updatedGoal: Goal = {
+        ...editingGoal,
+        name: newGoal.name,
+        description: newGoal.description,
+        type: newGoal.type,
+        targetValue: newGoal.targetValue ? parseFloat(newGoal.targetValue) : undefined,
+      };
+
+      await updateGoalInArray(currentUser.uid, "currentGoals", "goalId", editingGoal.goalId!, updatedGoal);
+      
+      setShowEditGoalModal(false);
+      setEditingGoal(null);
+      setNewGoal({
+        name: "",
+        description: "",
+        type: "",
+        targetValue: "",
+      });
+      
+      Alert.alert("Success", "Goal updated successfully!");
+    } catch (error: any) {
+      console.error("Error updating goal:", error);
+      Alert.alert("Error", error.message || "Failed to update goal");
+    }
+  };
+
   const calculateProgress = (current: number, goal: number) => {
     return Math.min((current / goal) * 100, 100);
+  };
+
+  const getCurrentValueForGoal = (goal: Goal): number => {
+    if (!goal.type) return 0;
+    
+    switch (goal.type) {
+      case 'steps':
+        return healthData?.steps || 0;
+      case 'distance':
+        return healthData?.distance || 0;
+      case 'calories':
+        return healthData?.calories || 0;
+      case 'weight':
+        return healthData?.weight || 0;
+      case 'totalCalories':
+        return nutritionData?.totalCalories || 0;
+      case 'protein':
+        return nutritionData?.protein || 0;
+      case 'carbs':
+        return nutritionData?.carbs || 0;
+      case 'fat':
+        return nutritionData?.fat || 0;
+      case 'sugar':
+        return nutritionData?.sugar || 0;
+      default:
+        return 0;
+    }
   };
 
   const getGoalUnit = (type: string | undefined) => {
@@ -260,6 +402,14 @@ export default function Home() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         onTouchStart={() => setShowProfileMenu(false)}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#007AFF"]}
+            tintColor="#007AFF"
+          />
+        }
       >
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
@@ -308,59 +458,35 @@ export default function Home() {
             <View style={styles.progressRow}>
               <Text style={styles.progressLabel}>Steps</Text>
               <Text style={styles.progressValue}>
-                {todayProgress.steps.toLocaleString()} / {todayProgress.stepsGoal.toLocaleString()}
+                {(healthData?.steps || 0).toLocaleString()}
               </Text>
-            </View>
-            <View style={styles.progressBarContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  {
-                    width: `${calculateProgress(todayProgress.steps, todayProgress.stepsGoal)}%`,
-                    backgroundColor: "#007AFF",
-                  },
-                ]}
-              />
             </View>
           </View>
 
           <View style={styles.progressCard}>
             <View style={styles.progressRow}>
-              <Text style={styles.progressLabel}>Calories</Text>
+              <Text style={styles.progressLabel}>Calorie Intake</Text>
               <Text style={styles.progressValue}>
-                {todayProgress.calories} / {todayProgress.caloriesGoal}
+                {nutritionData?.totalCalories || 0}
               </Text>
-            </View>
-            <View style={styles.progressBarContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  {
-                    width: `${calculateProgress(todayProgress.calories, todayProgress.caloriesGoal)}%`,
-                    backgroundColor: "#FF9800",
-                  },
-                ]}
-              />
             </View>
           </View>
 
           <View style={styles.progressCard}>
             <View style={styles.progressRow}>
-              <Text style={styles.progressLabel}>Protein</Text>
+              <Text style={styles.progressLabel}>Distance</Text>
               <Text style={styles.progressValue}>
-                {todayProgress.protein}g / {todayProgress.proteinGoal}g
+                {(healthData?.distance || 0).toFixed(1)} mi
               </Text>
             </View>
-            <View style={styles.progressBarContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  {
-                    width: `${calculateProgress(todayProgress.protein, todayProgress.proteinGoal)}%`,
-                    backgroundColor: "#4CAF50",
-                  },
-                ]}
-              />
+          </View>
+
+          <View style={styles.progressCard}>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressLabel}>Calories Burned</Text>
+              <Text style={styles.progressValue}>
+                {healthData?.calories || 0}
+              </Text>
             </View>
           </View>
         </View>
@@ -368,7 +494,7 @@ export default function Home() {
         {/* My Goals */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🎯 My Goals ({currentGoalCount}/5)</Text>
+            <Text style={styles.sectionTitle}>🎯 My Daily Goals ({currentGoalCount}/5)</Text>
           </View>
 
           {userData.profile?.currentGoals && userData.profile.currentGoals.length > 0 ? (
@@ -376,7 +502,24 @@ export default function Home() {
               <TouchableOpacity
                 key={goal.goalId}
                 style={styles.goalCard}
-                onLongPress={() => goal.goalId && handleDeleteGoal(goal.goalId)}
+                onLongPress={() => {
+                  Alert.alert(
+                    "Manage Goal",
+                    `What would you like to do with "${goal.name}"?`,
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      { 
+                        text: "Edit", 
+                        onPress: () => handleEditGoal(goal)
+                      },
+                      { 
+                        text: "Delete", 
+                        style: "destructive", 
+                        onPress: () => goal.goalId && handleDeleteGoal(goal.goalId)
+                      },
+                    ]
+                  );
+                }}
               >
                 <View style={styles.goalHeader}>
                   <View style={styles.goalLeft}>
@@ -421,6 +564,32 @@ export default function Home() {
                 {goal.description && (
                   <Text style={styles.goalDescription}>{goal.description}</Text>
                 )}
+                
+                {/* Progress Bar */}
+                {goal.targetValue && goal.type && (
+                  <View style={styles.goalProgressSection}>
+                    <View style={styles.goalProgressHeader}>
+                      <Text style={styles.goalProgressValue}>
+                        {getCurrentValueForGoal(goal).toLocaleString()} / {goal.targetValue.toLocaleString()}{getGoalUnit(goal.type)}
+                      </Text>
+                    </View>
+                    <View style={styles.goalProgressBarContainer}>
+                      <View
+                        style={[
+                          styles.goalProgressBar,
+                          {
+                            width: `${Math.min(calculateProgress(getCurrentValueForGoal(goal), goal.targetValue), 100)}%`,
+                            backgroundColor: calculateProgress(getCurrentValueForGoal(goal), goal.targetValue) >= 100 ? '#4CAF50' : '#2196F3',
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text style={styles.goalProgressText}>
+                      {calculateProgress(getCurrentValueForGoal(goal), goal.targetValue).toFixed(0)}% Complete
+                      {calculateProgress(getCurrentValueForGoal(goal), goal.targetValue) >= 100 && ' ✓'}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             ))
           ) : (
@@ -430,7 +599,7 @@ export default function Home() {
             </View>
           )}
 
-          <Text style={styles.goalHint}>💡 Long press any goal to delete</Text>
+          <Text style={styles.goalHint}>💡 Long press any goal to edit or delete</Text>
         </View>
       </ScrollView>
 
@@ -482,7 +651,8 @@ export default function Home() {
                 {[
                   { value: "steps", label: "Steps" },
                   { value: "distance", label: "Distance" },
-                  { value: "calories", label: "Cals Burned" },
+                  { value: "calories", label: "Calories" },
+                  { value: "weight", label: "Weight" },
                 ].map((type) => (
                   <TouchableOpacity
                     key={type.value}
@@ -622,6 +792,140 @@ export default function Home() {
                   disabled={!newGoal.name || !newGoal.type}
                 >
                   <Text style={styles.modalButtonSaveText}>Add Goal</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Edit Goal Modal */}
+      <Modal
+        visible={showEditGoalModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setShowEditGoalModal(false);
+          setEditingGoal(null);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Edit Goal</Text>
+
+              <Text style={styles.modalLabel}>Goal Name</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="e.g., Daily Steps Goal"
+                value={newGoal.name}
+                onChangeText={(text) => setNewGoal({ ...newGoal, name: text })}
+              />
+
+              <Text style={styles.modalLabel}>Description (optional)</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="What do you want to achieve?"
+                value={newGoal.description}
+                onChangeText={(text) => setNewGoal({ ...newGoal, description: text })}
+                multiline
+              />
+
+              {/* Health Goals */}
+              <Text style={styles.goalCategoryLabel}>Health Goals</Text>
+              <View style={styles.goalTypeButtons}>
+                {[
+                  { value: "steps", label: "Steps" },
+                  { value: "distance", label: "Distance" },
+                  { value: "calories", label: "Calories" },
+                  { value: "weight", label: "Weight" },
+                ].map((type) => (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[
+                      styles.goalTypeButton,
+                      newGoal.type === type.value && styles.goalTypeButtonActive,
+                    ]}
+                    onPress={() => setNewGoal({ ...newGoal, type: type.value as any })}
+                  >
+                    <Text
+                      style={[
+                        styles.goalTypeButtonText,
+                        newGoal.type === type.value && styles.goalTypeButtonTextActive,
+                      ]}
+                    >
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Nutrition Goals */}
+              <Text style={styles.goalCategoryLabel}>Nutrition Goals</Text>
+              <View style={styles.goalTypeButtons}>
+                {[
+                  { value: "totalCalories", label: "Calories" },
+                  { value: "protein", label: "Protein" },
+                  { value: "carbs", label: "Carbs" },
+                  { value: "fat", label: "Fat" },
+                  { value: "sugar", label: "Sugar" },
+                ].map((type) => (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[
+                      styles.goalTypeButton,
+                      newGoal.type === type.value && styles.goalTypeButtonActive,
+                    ]}
+                    onPress={() => setNewGoal({ ...newGoal, type: type.value as any })}
+                  >
+                    <Text
+                      style={[
+                        styles.goalTypeButtonText,
+                        newGoal.type === type.value && styles.goalTypeButtonTextActive,
+                      ]}
+                    >
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {newGoal.type && (
+                <>
+                  <Text style={styles.modalLabel}>Target Value</Text>
+                  <Text style={styles.targetHint}>
+                    Set your daily target for {newGoal.type}
+                  </Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="e.g., 10000"
+                    value={newGoal.targetValue}
+                    onChangeText={(text) => setNewGoal({ ...newGoal, targetValue: text })}
+                    keyboardType="numeric"
+                  />
+                </>
+              )}
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButtonCancel}
+                  onPress={() => {
+                    setShowEditGoalModal(false);
+                    setEditingGoal(null);
+                  }}
+                >
+                  <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalButtonSave,
+                    (!newGoal.name || !newGoal.type) && styles.modalButtonDisabled,
+                  ]}
+                  onPress={handleSaveEditedGoal}
+                  disabled={!newGoal.name || !newGoal.type}
+                >
+                  <Text style={styles.modalButtonSaveText}>Save Changes</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1063,6 +1367,36 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontStyle: "italic",
   },
+  goalProgressSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  goalProgressHeader: {
+    marginBottom: 8,
+  },
+  goalProgressValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+  },
+  goalProgressBarContainer: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  goalProgressBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  goalProgressText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'right',
+  },
   emptyGoals: {
     padding: 32,
     alignItems: "center",
@@ -1086,19 +1420,20 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 16,
   },
   modalScrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+    alignItems: "center", 
   },
   modalContent: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 24,
+    padding: 20,
     width: "100%",
     maxWidth: 400,
+    alignSelf: "center",
   },
   modalTitle: {
     fontSize: 20,
@@ -1131,18 +1466,19 @@ const styles = StyleSheet.create({
   },
   goalTypeButtons: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 8,
   },
   goalTypeButton: {
-    flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     borderRadius: 8,
     backgroundColor: "#f0f0f0",
     borderWidth: 1,
     borderColor: "#e0e0e0",
     alignItems: "center",
+    minWidth: 70,
   },
   goalTypeButtonActive: {
     backgroundColor: "#007AFF",
@@ -1152,6 +1488,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: "#666",
+    textAlign: "center",
   },
   goalTypeButtonTextActive: {
     color: "#fff",

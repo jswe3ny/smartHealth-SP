@@ -136,7 +136,12 @@ export default function HealthTracking() {
   useEffect(() => {
     if (profile?.currentGoals) {
       // Filter for health goals
-      const healthGoals = profile.currentGoals.filter(g => g.type && g.type !== 'general');
+      const healthGoals = profile.currentGoals.filter(g => 
+      g.type === 'steps' || 
+      g.type === 'distance' || 
+      g.type === 'calories' || 
+      g.type === 'weight'
+    );
       setGoals(healthGoals);
       
       // Update weight goal if exists
@@ -579,16 +584,14 @@ export default function HealthTracking() {
       {/* Daily Goals Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>My Goals</Text>
-            <Text style={styles.goalCount}>{currentGoalCount}/8 goals</Text>
-          </View>
+          <Text style={styles.sectionTitle}>My Health Goals</Text>
+          <Text style={styles.goalSubtitle}>Manage goals from Home page</Text>
         </View>
           {goals.length === 0 ? (
             <View style={styles.emptyGoalsCard}>
               <Text style={styles.emptyGoalsText}>No health goals set yet</Text>
               <Text style={styles.emptyGoalsSubtext}>
-                Add goals to track your daily progress
+                Go to Home page to add health goals
               </Text>
             </View>
         ) : (
@@ -597,20 +600,9 @@ export default function HealthTracking() {
               const progress = calculateProgress(goal);
               
               return (
-                <TouchableOpacity 
+                <View 
                   key={goal.goalId}
                   style={styles.barGoalCard}
-                  onLongPress={() => {
-                    Alert.alert(
-                      "Manage Goal",
-                      "What would you like to do?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Edit", onPress: () => handleEditGoal(goal) },
-                        { text: "Delete", style: "destructive", onPress: () => handleDeleteGoal(goal.goalId || "", goal.type || "") },
-                      ]
-                    );
-                  }}
                 >
                   <View style={styles.barGoalHeader}>
                     <Text style={styles.barGoalType}>Steps</Text>
@@ -642,33 +634,16 @@ export default function HealthTracking() {
                   {goalStreaks.steps > 0 && (
                     <Text style={styles.streakBadge}>🔥 {goalStreaks.steps} day streak</Text>
                   )}
-                </TouchableOpacity>
+                </View>
               );
             })}
             {goals.filter(g => g.type === "distance").map((goal) => {
               const progress = calculateProgress(goal);
               
               return (
-                <TouchableOpacity 
+                <View 
                   key={goal.goalId}
                   style={styles.barGoalCard}
-                  onLongPress={() => {
-                    Alert.alert(
-                      "Manage Goal",
-                      "What would you like to do?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Edit", onPress: () => handleEditGoal(goal) },
-                        { text: "Delete", style: "destructive", 
-                          onPress: () => {
-                            if (goal.goalId && goal.type){
-                              handleDeleteGoal(goal.goalId, goal.type);
-                              }
-                          }
-                        }
-                      ]
-                    );
-                  }}
                 >
                   <View style={styles.barGoalHeader}>
                     <Text style={styles.barGoalType}>Distance</Text>
@@ -700,7 +675,7 @@ export default function HealthTracking() {
                   {goalStreaks.steps > 0 && (
                     <Text style={styles.streakBadge}>🔥 {goalStreaks.steps} day streak</Text>
                   )}
-                </TouchableOpacity>
+                </View>
               );
             })}
 
@@ -709,26 +684,9 @@ export default function HealthTracking() {
               const progress = calculateProgress(goal);
               
               return (
-                <TouchableOpacity 
+                <View 
                   key={goal.goalId}
                   style={styles.barGoalCard}
-                  onLongPress={() => {
-                    Alert.alert(
-                      "Manage Goal",
-                      "What would you like to do?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Edit", onPress: () => handleEditGoal(goal) },
-                        { text: "Delete", style: "destructive", 
-                          onPress: () => {
-                            if (goal.goalId && goal.type){
-                              handleDeleteGoal(goal.goalId, goal.type);
-                              }
-                          }
-                        }
-                      ]
-                    );
-                  }}
                 >
                   <View style={styles.barGoalHeader}>
                     <Text style={styles.barGoalType}>Calories Burned</Text>
@@ -760,13 +718,11 @@ export default function HealthTracking() {
                   {goalStreaks.steps > 0 && (
                     <Text style={styles.streakBadge}>🔥 {goalStreaks.steps} day streak</Text>
                   )}
-                </TouchableOpacity>
+                </View>
               );
             })}
           </View>
         )}
-        
-        <Text style={styles.goalHint}>💡 Long press any goal to edit or delete</Text>
       </View>
 
       {/* Health Metrics */}
@@ -1080,6 +1036,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     fontWeight: "600",
+  },
+  goalSubtitle: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
   },
   addButton: {
     fontSize: 16,
