@@ -35,7 +35,7 @@ const parseNumericString = (value: any): number | null => {
 // BAD PRACTICE NEED TO MOVE FIRESTORE BATCH WRTIE TO FIRESTORE HELPERS !!!!
 export const addMeal = async (
   mealName: string,
-  MealType: string,
+  mealType: string,
   uid: string,
   foodItems: Omit<FoodItem, "foodItemId">[]
 ): Promise<string> => {
@@ -75,7 +75,7 @@ export const addMeal = async (
     );
     const mealInfo = {
       mealName,
-      MealType,
+      mealType,
       mealTime: Timestamp.now(),
       uid,
     };
@@ -136,7 +136,7 @@ export const getRecentMealSummaries = (
           mealName: doc.data.mealName,
           mealTime: doc.data.mealTime,
           totalCalories: doc.data.totalCalories || 0,
-          mealType: doc.data.mealType || doc.data.mealType || 'meal',
+          mealType: doc.data.mealType || 'meal',
         }));
 
         onUpdate(summaries);

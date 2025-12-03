@@ -1,10 +1,3 @@
-import {
-  fontSize,
-  fontWeight,
-  radius,
-  spacing,
-  useThemeColors,
-} from "@/assets/styles";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
 import { ProhibitedIngredient } from "@/utils/types/user.types";
@@ -29,7 +22,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Profile() {
   const { currentUser } = useAuth();
   const userData = useUserInfo();
-  const colors = useThemeColors();
 
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showAddIngredientModal, setShowAddIngredientModal] = useState(false);
@@ -40,7 +32,6 @@ export default function Profile() {
   const [firstName, setFirstName] = useState(userData.profile?.firstName || "");
   const [lastName, setLastName] = useState(userData.profile?.lastName || "");
   const [email, setEmail] = useState(userData.profile?.email || currentUser?.email || "");
-  const [height, setHeight] = useState(userData.profile?.height?.toString() || "");
   const [heightFeet, setHeightFeet] = useState("");
   const [heightInches, setHeightInches] = useState("");
   const [dob, setDob] = useState(
@@ -61,7 +52,6 @@ export default function Profile() {
       setFirstName(userData.profile.firstName || "");
       setLastName(userData.profile.lastName || "");
       setEmail(userData.profile.email || currentUser?.email || "");
-      setHeight(userData.profile.height?.toString() || "");
       if (userData.profile.dateOfBirth) {
         setDob(userData.profile.dateOfBirth.toDate());
       }
@@ -74,7 +64,6 @@ export default function Profile() {
       if (!currentUser) return;
       
       try {
-        // Get today's health data
         const { getHealthDataByDate } = require("@/utils/health.repo");
         const today = new Date();
         const healthData = await getHealthDataByDate(currentUser.uid, today);
@@ -107,9 +96,9 @@ export default function Profile() {
   };
 
   const getSeverityColor = (severity: number) => {
-    if (severity >= 3) return colors.error;
-    if (severity === 2) return colors.warning;
-    return colors.info;
+    if (severity >= 3) return "#F44336";
+    if (severity === 2) return "#FF9800";
+    return "#2196F3";
   };
 
   const handleSaveProfile = async () => {
@@ -219,129 +208,139 @@ export default function Profile() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: "#F5F5F5",
     },
     profileSection: {
-      backgroundColor: colors.surface,
-      padding: spacing.lg,
+      backgroundColor: "#fff",
+      padding: 24,
       alignItems: "center",
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      marginBottom: 16,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     avatarContainer: {
       alignItems: "center",
-      marginBottom: spacing.lg,
+      marginBottom: 20,
     },
     avatar: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.primary,
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: "#2196F3",
       justifyContent: "center",
       alignItems: "center",
-      marginBottom: spacing.sm,
+      marginBottom: 12,
     },
     avatarText: {
-      fontSize: fontSize.xxl,
-      fontWeight: fontWeight.bold,
-      color: colors.surface,
+      fontSize: 36,
+      fontWeight: "700",
+      color: "#fff",
     },
     profileValue: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
+      fontSize: 18,
+      fontWeight: "600",
+      color: "#000",
+      marginBottom: 4,
     },
     profileLabel: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
-      marginTop: spacing.xs,
+      fontSize: 14,
+      color: "#666",
+      marginTop: 4,
     },
     profileInfo: {
       width: "100%",
-      marginTop: spacing.md,
+      marginTop: 16,
     },
     profileRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      paddingVertical: spacing.sm,
+      paddingVertical: 12,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: "#E0E0E0",
     },
     editButton: {
-      marginTop: spacing.lg,
-      backgroundColor: colors.pastelGreen,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
-      borderRadius: radius.md,
+      marginTop: 20,
+      backgroundColor: "#2196F3",
+      paddingVertical: 14,
+      paddingHorizontal: 32,
+      borderRadius: 8,
     },
     editButtonText: {
-      color: colors.pastelGreenText,
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "600",
     },
     section: {
-      backgroundColor: colors.surface,
-      marginTop: spacing.md,
-      padding: spacing.lg,
+      backgroundColor: "#fff",
+      marginBottom: 16,
+      padding: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     sectionHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: spacing.md,
+      marginBottom: 16,
     },
     sectionTitle: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
-      color: colors.text,
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#000",
     },
     addButton: {
-      fontSize: fontSize.md,
-      color: colors.primary,
-      fontWeight: fontWeight.semibold,
+      fontSize: 16,
+      color: "#2196F3",
+      fontWeight: "600",
     },
     emptyText: {
-      fontSize: fontSize.md,
-      color: colors.textSecondary,
+      fontSize: 14,
+      color: "#999",
       textAlign: "center",
-      paddingVertical: spacing.lg,
+      paddingVertical: 24,
     },
     ingredientCard: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: spacing.md,
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: radius.sm,
-      marginBottom: spacing.sm,
+      padding: 16,
+      backgroundColor: "#F9F9F9",
+      borderRadius: 8,
+      marginBottom: 12,
     },
     ingredientInfo: {
       flex: 1,
     },
     ingredientName: {
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-      marginBottom: spacing.xs,
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#000",
+      marginBottom: 4,
     },
     ingredientReason: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
-      marginBottom: spacing.xs,
+      fontSize: 14,
+      color: "#666",
+      marginBottom: 8,
     },
     severityBadge: {
       alignSelf: "flex-start",
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-      borderRadius: radius.sm,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 12,
     },
     severityText: {
-      fontSize: fontSize.xs,
-      color: colors.surface,
-      fontWeight: fontWeight.semibold,
+      fontSize: 11,
+      color: "#fff",
+      fontWeight: "600",
     },
     deleteButton: {
-      padding: spacing.sm,
+      padding: 8,
     },
     modalOverlay: {
       flex: 1,
@@ -350,9 +349,9 @@ export default function Profile() {
       alignItems: "center",
     },
     modalContent: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
-      padding: spacing.lg,
+      backgroundColor: "#fff",
+      borderRadius: 16,
+      padding: 24,
       width: "90%",
       maxWidth: 400,
     },
@@ -360,119 +359,125 @@ export default function Profile() {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: spacing.lg,
+      marginBottom: 20,
     },
     modalTitle: {
-      fontSize: fontSize.xl,
-      fontWeight: fontWeight.bold,
-      color: colors.text,
+      fontSize: 20,
+      fontWeight: "700",
+      color: "#000",
     },
     closeButton: {
-      padding: spacing.xs,
+      padding: 4,
     },
     input: {
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: radius.sm,
-      padding: spacing.md,
-      fontSize: fontSize.md,
-      color: colors.text,
-      marginBottom: spacing.md,
+      backgroundColor: "#F5F5F5",
+      borderRadius: 8,
+      padding: 14,
+      fontSize: 16,
+      color: "#000",
+      marginBottom: 16,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: "#E0E0E0",
     },
     inputMultiline: {
-      height: 80,
+      height: 100,
       textAlignVertical: "top",
     },
     label: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-      marginBottom: spacing.xs,
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#000",
+      marginBottom: 8,
     },
     severityContainer: {
-      marginBottom: spacing.md,
+      marginBottom: 16,
     },
     severityOptions: {
       flexDirection: "row",
       justifyContent: "space-between",
-      gap: spacing.sm,
+      gap: 8,
     },
     severityOption: {
       flex: 1,
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-      borderRadius: radius.sm,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
       borderWidth: 2,
-      borderColor: colors.border,
+      borderColor: "#E0E0E0",
       alignItems: "center",
     },
     severityOptionActive: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + "20",
+      borderColor: "#2196F3",
+      backgroundColor: "#E3F2FD",
     },
     severityOptionText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.textSecondary,
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#666",
     },
     severityOptionTextActive: {
-      color: colors.primary,
+      color: "#2196F3",
     },
     modalButtons: {
       flexDirection: "row",
-      gap: spacing.sm,
+      gap: 12,
+      marginTop: 8,
     },
     modalButton: {
       flex: 1,
-      paddingVertical: spacing.md,
-      borderRadius: radius.sm,
+      paddingVertical: 14,
+      borderRadius: 8,
       alignItems: "center",
     },
     modalButtonCancel: {
-      backgroundColor: colors.backgroundTertiary,
+      backgroundColor: "#F5F5F5",
+      borderWidth: 1,
+      borderColor: "#E0E0E0",
     },
     modalButtonSave: {
-      backgroundColor: colors.pastelGreen,
+      backgroundColor: "#2196F3",
     },
     modalButtonText: {
-      fontSize: fontSize.md,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#666",
     },
     modalButtonSaveText: {
-      color: colors.pastelGreenText,
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "600",
     },
     heightRow: {
       flexDirection: "row",
-      gap: spacing.md,
+      gap: 12,
     },
     heightInputContainer: {
       flex: 1,
     },
     heightLabel: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-      marginBottom: spacing.xs,
+      fontSize: 14,
+      fontWeight: "600",
+      color: "#000",
+      marginBottom: 8,
       textAlign: "center",
     },
     helpText: {
-      fontSize: fontSize.xs,
-      color: colors.textSecondary,
-      marginTop: spacing.xs,
+      fontSize: 12,
+      color: "#999",
+      marginTop: -8,
+      marginBottom: 16,
     },
     datePickerButton: {
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: radius.sm,
-      padding: spacing.md,
-      marginBottom: spacing.md,
+      backgroundColor: "#F5F5F5",
+      borderRadius: 8,
+      padding: 14,
+      marginBottom: 16,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: "#E0E0E0",
     },
     datePickerButtonText: {
-      fontSize: fontSize.md,
-      color: colors.text,
+      fontSize: 16,
+      color: "#000",
     },
   });
 
@@ -607,7 +612,7 @@ export default function Profile() {
                   <Ionicons
                     name="trash-outline"
                     size={20}
-                    color={colors.error}
+                    color="#F44336"
                   />
                 </TouchableOpacity>
               </View>
@@ -631,7 +636,7 @@ export default function Profile() {
                 style={styles.closeButton}
                 onPress={() => setShowEditProfileModal(false)}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={24} color="#000" />
               </TouchableOpacity>
             </View>
 
@@ -641,7 +646,7 @@ export default function Profile() {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor="#999"
             />
 
             <Text style={styles.label}>Last Name</Text>
@@ -650,7 +655,7 @@ export default function Profile() {
               value={lastName}
               onChangeText={setLastName}
               placeholder="Enter last name"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor="#999"
             />
 
             <Text style={styles.label}>Email</Text>
@@ -660,7 +665,7 @@ export default function Profile() {
               onChangeText={setEmail}
               placeholder="Enter email"
               keyboardType="email-address"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor="#999"
             />
 
             <Text style={styles.label}>Date of Birth</Text>
@@ -721,7 +726,7 @@ export default function Profile() {
                 style={styles.closeButton}
                 onPress={() => setShowAddIngredientModal(false)}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={24} color="#000" />
               </TouchableOpacity>
             </View>
 
@@ -731,7 +736,7 @@ export default function Profile() {
               value={ingredientName}
               onChangeText={setIngredientName}
               placeholder="e.g., Peanuts"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor="#999"
             />
 
             <Text style={styles.label}>Reason (Optional)</Text>
@@ -740,7 +745,7 @@ export default function Profile() {
               value={ingredientReason}
               onChangeText={setIngredientReason}
               placeholder="Why are you avoiding this?"
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor="#999"
               multiline
             />
 
@@ -809,7 +814,7 @@ export default function Profile() {
                 style={styles.closeButton}
                 onPress={() => setShowEditHeightModal(false)}
               >
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={24} color="#000" />
               </TouchableOpacity>
             </View>
 
@@ -824,7 +829,7 @@ export default function Profile() {
                   placeholder="5"
                   keyboardType="numeric"
                   maxLength={1}
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor="#999"
                 />
               </View>
               <View style={styles.heightInputContainer}>
@@ -836,7 +841,7 @@ export default function Profile() {
                   placeholder="10"
                   keyboardType="numeric"
                   maxLength={2}
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor="#999"
                 />
               </View>
             </View>

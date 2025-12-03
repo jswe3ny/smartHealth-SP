@@ -58,6 +58,7 @@ export default function FoodJournal() {
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
   const [selectedMealDetails, setSelectedMealDetails] = useState<MealDetails | null>(null);
   const [loadingMealDetails, setLoadingMealDetails] = useState(false);
+  const [duplicatingMeal, setDuplicatingMeal] = useState(false);
 
   const [mealSummary, setMealSummary] = useState<MealSummary[]>([]);
 
@@ -228,6 +229,75 @@ export default function FoodJournal() {
       ]
     );
   };
+
+  const handleDuplicateMeal = async () => {
+    if (!selectedMealDetails || !currentUser) return;
+    
+    // Ask user which meal type
+    Alert.alert(
+      "Duplicate Meal",
+      "Which meal type is this?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Breakfast",
+          onPress: () => duplicateMealWithType("breakfast"),
+        },
+        {
+          text: "Lunch",
+          onPress: () => duplicateMealWithType("lunch"),
+        },
+        {
+          text: "Dinner",
+          onPress: () => duplicateMealWithType("dinner"),
+        },
+        {
+          text: "Snack",
+          onPress: () => duplicateMealWithType("snack"),
+        },
+      ]
+    );
+  };
+
+  const duplicateMealWithType = async (type: string) => {
+    if (!selectedMealDetails || !currentUser) return;
+    
+    setDuplicatingMeal(true);
+    
+    try {
+      // Extract food items without foodItemId
+      const foodItemsForDuplicate = selectedMealDetails.foodItems.map(item => ({
+        foodName: item.foodName,
+        calories: item.calories,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+        sugar: item.sugar,
+      }));
+      
+      // Add the meal with selected type and current timestamp
+      await addMeal(
+        selectedMealDetails.mealName || "Duplicated Meal",
+        type,
+        currentUser.uid,
+        foodItemsForDuplicate
+      );
+      
+      setShowMealDetailsModal(false);
+      setSelectedMealDetails(null);
+      setSelectedMealId(null);
+      Alert.alert("Success", `Meal added as ${type}!`);
+    } catch (error) {
+      console.error("Error duplicating meal:", error);
+      Alert.alert("Error", "Failed to duplicate meal");
+    } finally {
+      setDuplicatingMeal(false);
+    }
+  };
+
 
   if (!currentUser) return;
 
@@ -422,8 +492,7 @@ export default function FoodJournal() {
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.5)",
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: "flex-end",
     },
     modalContent: {
       backgroundColor: "#F9FAFB",
@@ -431,6 +500,7 @@ export default function FoodJournal() {
       borderTopRightRadius: 16,
       padding: 20,
       maxHeight: "90%",
+      width: "100%",
       shadowColor: "#000",
       shadowOffset: { width: 0, height: -2 },
       shadowOpacity: 0.1,
@@ -642,6 +712,12 @@ export default function FoodJournal() {
     mealDetailsContent: {
       padding: 20,
     },
+    mealTypeText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: "#2196F3",
+      marginRight: 8,
+    },
     foodItemsTitle: {
       fontSize: 18,
       fontWeight: 'bold',
@@ -667,14 +743,34 @@ export default function FoodJournal() {
       color: '#666',
       marginTop: 4,
     },
+    mealActionButtons: {
+      flexDirection: 'row',
+      gap: 12,
+      marginTop: 20,
+    },
+    duplicateMealButton: {
+      flex: 1,
+      backgroundColor: '#2196F3',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 14,
+      borderRadius: 12,
+      gap: 8,
+    },
+    duplicateMealButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
     deleteMealButton: {
+      flex: 1,
       backgroundColor: '#F44336',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       padding: 14,
       borderRadius: 12,
-      marginTop: 20,
       gap: 8,
     },
     deleteMealButtonText: {
@@ -797,9 +893,14 @@ export default function FoodJournal() {
                     >
                       <View style={styles.mealCardContent}>
                         <View>
-                          <Text style={styles.mealSummaryName}>
-                            {item.mealName || "Unnamed Meal"}
-                          </Text>
+                          <View style={styles.mealHeaderRow}>
+                            <Text style={styles.mealTypeText}>
+                              {item.mealType ? item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1) : 'Meal'}
+                            </Text>
+                            <Text style={styles.mealSummaryName}>
+                              {item.mealName || "Unnamed Meal"}
+                            </Text>
+                          </View>
                           <Text style={styles.mealTimeText}>
                             {item.mealTime.toDate().toLocaleTimeString('en-US', { 
                               hour: 'numeric', 
@@ -1138,14 +1239,27 @@ export default function FoodJournal() {
                   </View>
                 ))}
 
-                {/* Delete Button */}
-                <TouchableOpacity
-                  style={styles.deleteMealButton}
-                  onPress={handleDeleteMeal}
-                >
-                  <Ionicons name="trash" size={20} color="#fff" />
-                  <Text style={styles.deleteMealButtonText}>Delete Meal</Text>
-                </TouchableOpacity>
+                {/* Action Buttons */}
+                <View style={styles.mealActionButtons}>
+                  <TouchableOpacity
+                    style={styles.duplicateMealButton}
+                    onPress={handleDuplicateMeal}
+                    disabled={duplicatingMeal}
+                  >
+                    <Ionicons name="copy" size={20} color="#fff" />
+                    <Text style={styles.duplicateMealButtonText}>
+                      {duplicatingMeal ? "Duplicating..." : "Duplicate Meal"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.deleteMealButton}
+                    onPress={handleDeleteMeal}
+                  >
+                    <Ionicons name="trash" size={20} color="#fff" />
+                    <Text style={styles.deleteMealButtonText}>Delete Meal</Text>
+                  </TouchableOpacity>
+                </View>
               </ScrollView>
             )}
           </View>

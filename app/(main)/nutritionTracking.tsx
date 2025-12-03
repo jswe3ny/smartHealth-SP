@@ -9,6 +9,7 @@ import {
 } from "@/utils/nutrition.repo";
 import { DailyNutritionData } from "@/utils/types/nutrition.types";
 import { Goal } from "@/utils/types/user.types";
+import { useFocusEffect } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -32,9 +33,11 @@ export default function NutritionTracking() {
   const [refreshing, setRefreshing] = useState(false);
   const [nutritionGoals, setNutritionGoals] = useState<Goal[]>([]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [currentUser])
+  );
 
   useEffect(() => {
     if (profile?.currentGoals) {
@@ -360,7 +363,7 @@ export default function NutritionTracking() {
       {/* Calorie Budget Tracker */}
       {todayData && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Calorie Budget</Text>
+          <Text style={styles.sectionTitle}>Daily Calorie Budget</Text>
           {calorieGoal ? (
             <>
               <View style={styles.budgetRow}>
@@ -394,12 +397,6 @@ export default function NutritionTracking() {
               <Text style={styles.progressText}>
                 {Math.round((todayData.totalCalories / (calorieGoal?.targetValue || 2000)) * 100)}% of daily goal
               </Text>
-
-              {weekData.length > 0 && (
-                <Text style={styles.weeklyAvgText}>
-                  Weekly average: {weeklyAvg.calories} cal/day
-                </Text>
-              )}
             </>
           ) : (
             <View style={styles.emptyState}>
@@ -588,14 +585,13 @@ export default function NutritionTracking() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Daily Goals Progress</Text>
           {nutritionGoals.map((goal) => {
-            const today = weekData.length > 0 ? weekData[weekData.length - 1] : null;
-            const currentValue = today
-              ? goal.type === 'protein' ? today.protein :
-                goal.type === 'carbs' ? today.carbs :
-                goal.type === 'fat' ? today.fat :
-                goal.type === 'totalCalories' ? today.totalCalories :
-                goal.type === 'fiber' ? today.fiber :
-                goal.type === 'sugar' ? today.sugar : 0
+            const currentValue = todayData
+              ? goal.type === 'protein' ? todayData.protein :
+                goal.type === 'carbs' ? todayData.carbs :
+                goal.type === 'fat' ? todayData.fat :
+                goal.type === 'totalCalories' ? todayData.totalCalories :
+                goal.type === 'fiber' ? todayData.fiber :
+                goal.type === 'sugar' ? todayData.sugar : 0
               : 0;
 
             const progress = (goal?.targetValue || 0)
