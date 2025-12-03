@@ -41,6 +41,7 @@ export default function FoodJournal() {
 
   const [mealName, setMealName] = useState("");
   const [mealType, setMealType] = useState("breakfast");
+  const [showMealTypePicker, setShowMealTypePicker] = useState(false);
   const [foodItems, setFoodItems] = useState<NewFoodItem[]>([]);
   const [currentFoodItem, setCurrentFoodItem] = useState<NewFoodItem>({
     tempClientId: undefined,
@@ -305,6 +306,72 @@ if (allergenMatches.length > 0) {
       justifyContent: "center",
       alignItems: "center",
       marginTop: spacing.sm,
+    },
+    dropdownButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+      borderRadius: 8,
+      backgroundColor: '#fff',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    dropdownButtonText: {
+      fontSize: 16,
+      color: '#333',
+    },
+    pickerModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    pickerModal: {
+      backgroundColor: '#fff',
+      borderRadius: 16,
+      padding: 20,
+      width: '100%',
+      maxWidth: 400,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 4,
+      elevation: 5,
+    },
+    pickerTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    pickerOption: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F0F0F0',
+    },
+    pickerOptionText: {
+      fontSize: 16,
+      color: '#333',
+    },
+    pickerCancelButton: {
+      marginTop: 12,
+      paddingVertical: 14,
+      backgroundColor: '#F5F5F5',
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    pickerCancelText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#666',
     },
     modalOverlay: {
       flex: 1,
@@ -574,13 +641,15 @@ if (allergenMatches.length > 0) {
               {/* Meal Type */}
               <View style={styles.formSection}>
                 <Text style={styles.label}>Meal Type</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="breakfast, lunch, dinner, snack"
-                  placeholderTextColor={colors.textTertiary}
-                  value={mealType}
-                  onChangeText={setMealType}
-                />
+                <TouchableOpacity
+                  style={styles.dropdownButton}
+                  onPress={() => setShowMealTypePicker(true)}
+                >
+                  <Text style={styles.dropdownButtonText}>
+                    {mealType.charAt(0).toUpperCase() + mealType.slice(1)}
+                  </Text>
+                  <Ionicons name="chevron-down" size={20} color="#666" />
+                </TouchableOpacity>
               </View>
 
               {/* Food Item Section */}
@@ -741,6 +810,83 @@ if (allergenMatches.length > 0) {
             </ScrollView>
           </View>
         </View>
+      </Modal>
+
+      {/* Meal Type Picker Modal */}
+      <Modal
+        visible={showMealTypePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMealTypePicker(false)}
+      >
+        <TouchableOpacity
+          style={styles.pickerModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowMealTypePicker(false)}
+        >
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerTitle}>Select Meal Type</Text>
+            
+            <TouchableOpacity
+              style={styles.pickerOption}
+              onPress={() => {
+                setMealType('breakfast');
+                setShowMealTypePicker(false);
+              }}
+            >
+              <Text style={styles.pickerOptionText}>🌅 Breakfast</Text>
+              {mealType === 'breakfast' && (
+                <Ionicons name="checkmark" size={24} color="#4CAF50" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.pickerOption}
+              onPress={() => {
+                setMealType('lunch');
+                setShowMealTypePicker(false);
+              }}
+            >
+              <Text style={styles.pickerOptionText}>☀️ Lunch</Text>
+              {mealType === 'lunch' && (
+                <Ionicons name="checkmark" size={24} color="#4CAF50" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.pickerOption}
+              onPress={() => {
+                setMealType('dinner');
+                setShowMealTypePicker(false);
+              }}
+            >
+              <Text style={styles.pickerOptionText}>🌙 Dinner</Text>
+              {mealType === 'dinner' && (
+                <Ionicons name="checkmark" size={24} color="#4CAF50" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.pickerOption}
+              onPress={() => {
+                setMealType('snack');
+                setShowMealTypePicker(false);
+              }}
+            >
+              <Text style={styles.pickerOptionText}>🍿 Snack</Text>
+              {mealType === 'snack' && (
+                <Ionicons name="checkmark" size={24} color="#4CAF50" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.pickerCancelButton}
+              onPress={() => setShowMealTypePicker(false)}
+            >
+              <Text style={styles.pickerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Barcode Scanner Modal */}
