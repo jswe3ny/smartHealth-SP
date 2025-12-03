@@ -1,13 +1,13 @@
 import { getAuthorProfile, getPostsByAuthor } from "@/utils/blog.repo";
 import { AuthorProfile, BlogPost } from "@/utils/types/blog.types";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { Link, router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { memo, useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,6 +18,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 // CSUB Brand Colors
 const CSUB_BLUE = "#003594";
 const CSUB_GOLD = "#FFC72C";
+const PINNED_RED = "#FF0000";
+
+// --- UTILITY FUNCTIONS  ---
+const formatJoinDate = (timestamp: any) => {
+  if (!timestamp?.toDate) return "";
+  return timestamp.toDate().toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const formatPostDate = (timestamp: any) => {
+  if (!timestamp?.toDate) return "";
+  const date = timestamp.toDate();
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
 export default function AuthorProfileScreen() {
   const { authorId } = useLocalSearchParams<{ authorId: string }>();
@@ -49,44 +65,16 @@ export default function AuthorProfileScreen() {
     loadData();
   }, [authorId]);
 
-  const handleWebsitePress = () => {
+  const handleWebsitePress = useCallback(() => {
     if (profile?.website) {
       Linking.openURL(profile.website);
     }
-  };
+  }, [profile?.website]);
 
-  const formatJoinDate = (timestamp: any) => {
-    if (!timestamp?.toDate) return "";
-    return timestamp.toDate().toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  const formatPostDate = (timestamp: any) => {
-    if (!timestamp?.toDate) return "";
-    const date = timestamp.toDate();
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-
-  const renderPostCard = ({ item }: { item: BlogPost }) => (
-    <Link href={`../post/${item.postId}`} asChild>
-      <TouchableOpacity style={styles.postCard}>
-        {item.imageUrl && (
-          <Image source={{ uri: item.imageUrl }} style={styles.postImage} />
-        )}
-        <View style={styles.postContent}>
-          <Text style={styles.postTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-          <Text style={styles.postSummary} numberOfLines={2}>
-            {item.summary || item.content}
-          </Text>
-          <Text style={styles.postDate}>{formatPostDate(item.timestamp)}</Text>
-        </View>
-      </TouchableOpacity>
-    </Link>
-  );
+  // ✅ Stable Render Item
+  const renderItem = useCallback(({ item }: { item: BlogPost }) => {
+    return <PostCardItem item={item} showPinned={true} />;
+  }, []);
 
   if (isLoading) {
     return (
@@ -118,7 +106,9 @@ export default function AuthorProfileScreen() {
     );
   }
 
-  const fullName = `${profile.firstName || ""} ${profile.lastname || ""}`.trim() || "Unknown Author";
+  const fullName =
+    `${profile.firstName || ""} ${profile.lastname || ""}`.trim() ||
+    "Unknown Author";
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -137,92 +127,168 @@ export default function AuthorProfileScreen() {
       <FlatList
         data={authorPosts}
         keyExtractor={(item) => item.postId}
-        renderItem={renderPostCard}
+        renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        // Performance Props
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
+        // ✅ Stable Header Component
         ListHeaderComponent={
-          <>
-            {/* Profile Card */}
-            <View style={styles.profileCard}>
-              {/* Avatar */}
-              <View style={styles.avatarContainer}>
-                {profile.imageLink ? (
-                  <Image
-                    source={{ uri: profile.imageLink }}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Text style={styles.avatarText}>
-                      {fullName.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-                <View style={styles.verifiedBadgeLarge}>
-                  <Ionicons name="checkmark-circle" size={28} color={CSUB_GOLD} />
-                </View>
-              </View>
-
-              {/* Name & Bio */}
-              <Text style={styles.profileName}>{fullName}</Text>
-              
-              <View style={styles.verifiedLabel}>
-                <Ionicons name="shield-checkmark" size={16} color={CSUB_BLUE} />
-                <Text style={styles.verifiedLabelText}>Verified Organization</Text>
-              </View>
-
-              {profile.bio && (
-                <Text style={styles.profileBio}>{profile.bio}</Text>
-              )}
-
-              {/* Stats Row */}
-              <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>{authorPosts.length}</Text>
-                  <Text style={styles.statLabel}>Articles</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>
-                    {formatJoinDate(profile.joined) || "—"}
-                  </Text>
-                  <Text style={styles.statLabel}>Joined</Text>
-                </View>
-              </View>
-
-              {/* Website Button */}
-              {profile.website && (
-                <TouchableOpacity
-                  style={styles.websiteButton}
-                  onPress={handleWebsitePress}
-                >
-                  <Ionicons name="globe-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.websiteButtonText}>Visit Website</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Posts Section Header */}
-            <View style={styles.sectionHeader}>
-              <Ionicons name="document-text" size={22} color={CSUB_BLUE} />
-              <Text style={styles.sectionTitle}>
-                Articles by {profile.firstName || "Author"}
-              </Text>
-            </View>
-
-            {authorPosts.length === 0 && (
-              <View style={styles.emptyPosts}>
-                <Ionicons name="newspaper-outline" size={48} color="#CBD5E1" />
-                <Text style={styles.emptyPostsText}>No articles yet</Text>
-              </View>
-            )}
-          </>
+          <ProfileHeader
+            profile={profile}
+            fullName={fullName}
+            postCount={authorPosts.length}
+            onWebsitePress={handleWebsitePress}
+          />
         }
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       />
     </SafeAreaView>
   );
 }
+const getOptimizedImageUrl = (url: string) => {
+  if (url.includes("images.unsplash.com")) {
+    return url.replace("w=800", "w=200");
+  }
+  return url;
+};
+
+const PostCardItem = memo(
+  ({ item, showPinned = false }: { item: BlogPost; showPinned?: boolean }) => (
+    <Link href={`../post/${item.postId}`} asChild>
+      <TouchableOpacity style={styles.postCard}>
+        {item.imageUrl && (
+          <Image
+            source={{ uri: getOptimizedImageUrl(item.imageUrl) }}
+            style={styles.postImage}
+            contentFit="cover" // Instead of resizeMode="cover"
+            transition={500} // Fades the image in (smooth!)
+            cachePolicy="memory-disk" // Aggressive caching
+          />
+        )}
+        <View style={styles.postContent}>
+          {item.pinned && showPinned && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 6,
+              }}
+            >
+              <Ionicons name="pin" size={24} color={PINNED_RED} />
+              <Text style={{ fontSize: 12, fontWeight: "700", color: "#666" }}>
+                PINNED
+              </Text>
+            </View>
+          )}
+
+          <Text style={styles.postTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.postSummary} numberOfLines={2}>
+            {item.summary || item.content}
+          </Text>
+          <Text style={styles.postDate}>{formatPostDate(item.timestamp)}</Text>
+        </View>
+      </TouchableOpacity>
+    </Link>
+  ),
+  (prev, next) => {
+    // Custom Comparator for Firestore References
+    return (
+      prev.item.postId === next.item.postId &&
+      prev.item.title === next.item.title &&
+      prev.item.imageUrl === next.item.imageUrl &&
+      prev.item.content === next.item.content
+    );
+  }
+);
+PostCardItem.displayName = "PostCardItem";
+
+const ProfileHeader = memo(
+  ({ profile, fullName, postCount, onWebsitePress }: any) => {
+    return (
+      <>
+        <View style={styles.profileCard}>
+          {/* Avatar */}
+          <View style={styles.avatarContainer}>
+            {profile.imageLink ? (
+              <Image
+                source={{ uri: profile.imageLink }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>
+                  {fullName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <View style={styles.verifiedBadgeLarge}>
+              <Ionicons name="checkmark-circle" size={28} color={CSUB_GOLD} />
+            </View>
+          </View>
+
+          {/* Name & Bio */}
+          <Text style={styles.profileName}>{fullName}</Text>
+
+          <View style={styles.verifiedLabel}>
+            <Ionicons name="shield-checkmark" size={16} color={CSUB_BLUE} />
+            <Text style={styles.verifiedLabelText}>Verified Organization</Text>
+          </View>
+
+          {profile.bio && <Text style={styles.profileBio}>{profile.bio}</Text>}
+
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{postCount}</Text>
+              <Text style={styles.statLabel}>Articles</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {formatJoinDate(profile.joined) || "—"}
+              </Text>
+              <Text style={styles.statLabel}>Joined</Text>
+            </View>
+          </View>
+
+          {/* Website Button */}
+          {profile.website && (
+            <TouchableOpacity
+              style={styles.websiteButton}
+              onPress={onWebsitePress}
+            >
+              <Ionicons name="globe-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.websiteButtonText}>Visit Website</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Posts Section Header */}
+        <View style={styles.sectionHeader}>
+          <Ionicons name="document-text" size={22} color={CSUB_BLUE} />
+          <Text style={styles.sectionTitle}>
+            Articles by {profile.firstName || "Author"}
+          </Text>
+        </View>
+
+        {postCount === 0 && (
+          <View style={styles.emptyPosts}>
+            <Ionicons name="newspaper-outline" size={48} color="#CBD5E1" />
+            <Text style={styles.emptyPostsText}>No articles yet</Text>
+          </View>
+        )}
+      </>
+    );
+  }
+);
+
+ProfileHeader.displayName = "PostCardHeader";
 
 const styles = StyleSheet.create({
   container: {

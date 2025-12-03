@@ -14,7 +14,7 @@ const USERS_COLLECTION = "user";
 export const subscribeToMainFeed = (onUpdate: (posts: BlogPost[]) => void) => {
   const options: QueryOptions = {
     orderBy: [{ field: "timestamp", dir: "desc" }],
-    limit: 20,
+    limit: 10,
   };
 
   return listenCollection<BlogPost>(POSTS_COLLECTION, options, (docs) => {
@@ -56,18 +56,27 @@ export const getAuthorProfile = async (
   return { ...doc.data, uid: doc.id };
 };
 
-/**
- * Fetches all posts by a specific author.
- */
 export const getPostsByAuthor = async (
   authorId: string
 ): Promise<BlogPost[]> => {
   const options: QueryOptions = {
     where: [{ field: "authorId", op: "==", value: authorId }],
     orderBy: [{ field: "timestamp", dir: "desc" }],
+    limit: 10,
   };
 
   const docs = await getCollection<BlogPost>(POSTS_COLLECTION, options);
 
-  return docs.map((doc) => ({ ...doc.data, postId: doc.id }));
+  // 1. Map the data first
+  const posts = docs.map((doc) => ({ ...doc.data, postId: doc.id }));
+
+  // 2. Sort: Pinned posts go to the top (index 0)
+  return posts.sort((a, b) => {
+    // If 'a' is pinned and 'b' is not, 'a' comes first (-1)
+    if (a.pinned && !b.pinned) return -1;
+    // If 'b' is pinned and 'a' is not, 'b' comes first (1)
+    if (!a.pinned && b.pinned) return 1;
+    // Otherwise, keep the original order (by timestamp)
+    return 0;
+  });
 };

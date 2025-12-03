@@ -12,19 +12,20 @@ export interface BlogPost {
   summary?: string; // A short preview for the feed
   timestamp: Timestamp;
   imageUrl?: string; // Optional header image
+  pinned?: boolean;
 }
 
 /**
  * Author/Organization profile structure
  * Must match the user document structure in Firebase
- * 
+ *
  * Required fields:
  * - firstName: Author's first name
  * - lastName: Author's last name
  * - bio: Short biography/description
  * - website: Organization website URL
  * - joined: Timestamp when author joined
- * 
+ *
  * Optional fields:
  * - imageLink: Profile photo URL
  */
