@@ -87,10 +87,54 @@ export default function FoodJournal() {
   }, [currentUser]);
 
   const handleInputChange = (field: keyof FoodItem, value: string) => {
-    setCurrentFoodItem((prevItem) => ({
-      ...prevItem,
-      [field]: value,
-    }));
+    // Validate numeric fields
+    if (['calories', 'protein', 'carbs', 'fat', 'sugar'].includes(field as string)) {
+      // Allow empty string
+      if (value === '') {
+        setCurrentFoodItem((prevItem) => ({
+          ...prevItem,
+          [field]: '',
+        }));
+        return;
+      }
+    
+      // Remove any non-numeric characters except decimal point
+      let cleaned = value.replace(/[^\d.]/g, '');
+    
+      // Only allow one decimal point
+      const parts = cleaned.split('.');
+      if (parts.length > 2) {
+        cleaned = parts[0] + '.' + parts.slice(1).join('');
+      }
+    
+      // Limit to 2 decimal places
+      if (parts.length === 2 && parts[1].length > 2) {
+        return; // Don't allow more than 2 decimal places
+      }
+    
+      // Check for negative (don't allow)
+      const numValue = parseFloat(cleaned || '0');
+      if (numValue < 0) {
+        return;
+      }
+    
+      // Limit maximum value to 9999
+      if (numValue > 9999) {
+        return;
+      }
+    
+      // Update with the cleaned value as-is (preserves ".", ".1", etc.)
+      setCurrentFoodItem((prevItem) => ({
+        ...prevItem,
+        [field]: cleaned,
+      }));
+    } else {
+      // For non-numeric fields
+      setCurrentFoodItem((prevItem) => ({
+        ...prevItem,
+        [field]: value,
+      }));
+    }
   };
 
   const autofillForm = (product: ProductData) => {
@@ -1077,10 +1121,10 @@ export default function FoodJournal() {
 
                 {/* Carbs */}
                 <View style={styles.formSection}>
-                  <Text style={styles.label}>Carbs (mg)</Text>
+                  <Text style={styles.label}>Carbs (g)</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Carbs (mg)"
+                    placeholder="Carbs (g)"
                     placeholderTextColor="#999"
                     keyboardType="numeric"
                     value={currentFoodItem.carbs?.toString()}
