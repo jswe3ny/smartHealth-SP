@@ -129,7 +129,7 @@ export default function Feed() {
         <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <View style={styles.headerContent}>
+      <View style={styles.headerContent} pointerEvents="none">
         <View style={styles.headerIconContainer}>
           <Ionicons name="nutrition" size={28} color={CSUB_BLUE} />
         </View>
@@ -221,6 +221,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
+    alignSelf: "flex-start",
+    padding: 8,
+    marginLeft: -8,
   },
   headerContent: {
     flexDirection: "row",

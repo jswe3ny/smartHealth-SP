@@ -124,14 +124,13 @@ export default function AuthorProfileScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
+        <Text style={styles.headerTitle}>Author Profile</Text>
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => router.back()}
         >
           <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Author Profile</Text>
-        <View style={styles.headerButton} />
       </View>
 
       <FlatList
@@ -293,18 +292,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     backgroundColor: CSUB_BLUE,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   headerButton: {
+    left: 16,
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     justifyContent: "center",
     alignItems: "center",
+    position: "absolute",
   },
   headerTitle: {
     fontSize: 18,
