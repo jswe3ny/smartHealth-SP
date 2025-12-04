@@ -760,7 +760,6 @@ export default function Home() {
                   { value: "steps", label: "Steps" },
                   { value: "distance", label: "Distance" },
                   { value: "calories", label: "Calories" },
-                  { value: "weight", label: "Weight" },
                 ].map((type) => (
                   <TouchableOpacity
                     key={type.value}
@@ -985,7 +984,6 @@ export default function Home() {
                   { value: "steps", label: "Steps" },
                   { value: "distance", label: "Distance" },
                   { value: "calories", label: "Calories" },
-                  { value: "weight", label: "Weight" },
                 ].map((type) => (
                   <TouchableOpacity
                     key={type.value}
@@ -993,16 +991,17 @@ export default function Home() {
                       styles.goalTypeButton,
                       newGoal.type === type.value &&
                         styles.goalTypeButtonActive,
+                        styles.goalTypeButtonDisabled,
                     ]}
-                    onPress={() =>
-                      setNewGoal({ ...newGoal, type: type.value as any })
-                    }
+                    onPress={() => {}}
+                    disabled={true}
                   >
                     <Text
                       style={[
                         styles.goalTypeButtonText,
                         newGoal.type === type.value &&
                           styles.goalTypeButtonTextActive,
+                          styles.goalTypeButtonDisabled,
                       ]}
                     >
                       {type.label}
@@ -1028,15 +1027,15 @@ export default function Home() {
                       newGoal.type === type.value &&
                         styles.goalTypeButtonActive,
                     ]}
-                    onPress={() =>
-                      setNewGoal({ ...newGoal, type: type.value as any })
-                    }
+                    onPress={() => {}}
+                    disabled={true}
                   >
                     <Text
                       style={[
                         styles.goalTypeButtonText,
                         newGoal.type === type.value &&
                           styles.goalTypeButtonTextActive,
+                          styles.goalTypeButtonDisabled,
                       ]}
                     >
                       {type.label}
@@ -1674,6 +1673,9 @@ const styles = StyleSheet.create({
   goalTypeButtonActive: {
     backgroundColor: "#007AFF",
     borderColor: "#007AFF",
+  },
+  goalTypeButtonDisabled: {
+    opacity: 0.5,
   },
   goalTypeButtonText: {
     fontSize: 13,
