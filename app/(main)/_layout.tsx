@@ -13,7 +13,7 @@ export default function AppLayout() {
   if (!profile?.onboardingComplete) return <Redirect href="/onboarding" />;
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
       <Tabs
         screenOptions={{
           headerShown: false,

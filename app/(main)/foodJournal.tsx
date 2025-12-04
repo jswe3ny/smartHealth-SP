@@ -14,13 +14,19 @@ import {
   View,
 } from "react-native";
 
-import {
-  spacing,
-  useThemeColors
-} from "@/assets/styles";
+import { spacing, useThemeColors } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
-import { checkForAllergens, getAllergenAlertMessage, getSeverityText } from "@/utils/allergen.detector";
-import { addMeal, deleteMealByID, getMealDetailsById, getRecentMealSummaries } from "@/utils/foodjournal.repo";
+import {
+  checkForAllergens,
+  getAllergenAlertMessage,
+  getSeverityText,
+} from "@/utils/allergen.detector";
+import {
+  addMeal,
+  deleteMealByID,
+  getMealDetailsById,
+  getRecentMealSummaries,
+} from "@/utils/foodjournal.repo";
 import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import {
   FoodItem,
@@ -56,7 +62,8 @@ export default function FoodJournal() {
   // Meal Details Modal States
   const [showMealDetailsModal, setShowMealDetailsModal] = useState(false);
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
-  const [selectedMealDetails, setSelectedMealDetails] = useState<MealDetails | null>(null);
+  const [selectedMealDetails, setSelectedMealDetails] =
+    useState<MealDetails | null>(null);
   const [loadingMealDetails, setLoadingMealDetails] = useState(false);
   const [duplicatingMeal, setDuplicatingMeal] = useState(false);
 
@@ -107,9 +114,11 @@ export default function FoodJournal() {
 
     if (allergenMatches.length > 0) {
       const alertMessage = getAllergenAlertMessage(allergenMatches);
-      const highestSeverity = Math.max(...allergenMatches.map(m => m.severity));
+      const highestSeverity = Math.max(
+        ...allergenMatches.map((m) => m.severity)
+      );
       const severityText = getSeverityText(highestSeverity);
-      
+
       Alert.alert(
         `🚨 ${severityText} ALLERGEN WARNING`,
         `${product.productName}\n\n${alertMessage}\n\n⚠️ DISCLAIMER: Always verify ingredients on the physical product label.`,
@@ -126,9 +135,7 @@ export default function FoodJournal() {
                 "Are you sure?",
                 "This product contains ingredients you've marked as prohibited. Add to meal anyway?",
                 [
-                  { text: "Cancel", 
-                    onPress: () => setShowAddMealModal(true)
-                  },
+                  { text: "Cancel", onPress: () => setShowAddMealModal(true) },
                   {
                     text: "Yes, Add",
                     onPress: () => autofillForm(product),
@@ -152,7 +159,7 @@ export default function FoodJournal() {
   };
 
   const handleAddItem = () => {
-    if (!currentFoodItem.foodName || currentFoodItem.foodName.trim() === '') {
+    if (!currentFoodItem.foodName || currentFoodItem.foodName.trim() === "") {
       Alert.alert(
         "Missing Food Name",
         "Please enter a food name before adding the item to your meal."
@@ -192,7 +199,7 @@ export default function FoodJournal() {
     setSelectedMealId(mealId);
     setShowMealDetailsModal(true);
     setLoadingMealDetails(true);
-    
+
     try {
       const details = await getMealDetailsById(mealId);
       setSelectedMealDetails(details);
@@ -206,78 +213,72 @@ export default function FoodJournal() {
 
   const handleDeleteMeal = async () => {
     if (!selectedMealId) return;
-    
-    Alert.alert(
-      "Delete Meal",
-      "Are you sure you want to delete this meal?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteMealByID(selectedMealId);
-              setShowMealDetailsModal(false);
-              setSelectedMealDetails(null);
-              setSelectedMealId(null);
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete meal");
-            }
-          },
+
+    Alert.alert("Delete Meal", "Are you sure you want to delete this meal?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteMealByID(selectedMealId);
+            setShowMealDetailsModal(false);
+            setSelectedMealDetails(null);
+            setSelectedMealId(null);
+          } catch (error) {
+            Alert.alert("Error", "Failed to delete meal");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleDuplicateMeal = async () => {
     if (!selectedMealDetails || !currentUser) return;
-    
+
     // Ask user which meal type
-    Alert.alert(
-      "Duplicate Meal",
-      "Which meal type is this?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Breakfast",
-          onPress: () => duplicateMealWithType("breakfast"),
-        },
-        {
-          text: "Lunch",
-          onPress: () => duplicateMealWithType("lunch"),
-        },
-        {
-          text: "Dinner",
-          onPress: () => duplicateMealWithType("dinner"),
-        },
-        {
-          text: "Snack",
-          onPress: () => duplicateMealWithType("snack"),
-        },
-      ]
-    );
+    Alert.alert("Duplicate Meal", "Which meal type is this?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Breakfast",
+        onPress: () => duplicateMealWithType("breakfast"),
+      },
+      {
+        text: "Lunch",
+        onPress: () => duplicateMealWithType("lunch"),
+      },
+      {
+        text: "Dinner",
+        onPress: () => duplicateMealWithType("dinner"),
+      },
+      {
+        text: "Snack",
+        onPress: () => duplicateMealWithType("snack"),
+      },
+    ]);
   };
 
   const duplicateMealWithType = async (type: string) => {
     if (!selectedMealDetails || !currentUser) return;
-    
+
     setDuplicatingMeal(true);
-    
+
     try {
       // Extract food items without foodItemId
-      const foodItemsForDuplicate = selectedMealDetails.foodItems.map(item => ({
-        foodName: item.foodName,
-        calories: item.calories,
-        protein: item.protein,
-        carbs: item.carbs,
-        fat: item.fat,
-        sugar: item.sugar,
-      }));
-      
+      const foodItemsForDuplicate = selectedMealDetails.foodItems.map(
+        (item) => ({
+          foodName: item.foodName,
+          calories: item.calories,
+          protein: item.protein,
+          carbs: item.carbs,
+          fat: item.fat,
+          sugar: item.sugar,
+        })
+      );
+
       // Add the meal with selected type and current timestamp
       await addMeal(
         selectedMealDetails.mealName || "Duplicated Meal",
@@ -285,7 +286,7 @@ export default function FoodJournal() {
         currentUser.uid,
         foodItemsForDuplicate
       );
-      
+
       setShowMealDetailsModal(false);
       setSelectedMealDetails(null);
       setSelectedMealId(null);
@@ -297,7 +298,6 @@ export default function FoodJournal() {
       setDuplicatingMeal(false);
     }
   };
-
 
   if (!currentUser) return;
 
@@ -424,34 +424,34 @@ export default function FoodJournal() {
       marginTop: spacing.sm,
     },
     dropdownButton: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       borderWidth: 1,
-      borderColor: '#D1D5DB',
+      borderColor: "#D1D5DB",
       borderRadius: 8,
-      backgroundColor: '#fff',
+      backgroundColor: "#fff",
       paddingHorizontal: 16,
       paddingVertical: 14,
     },
     dropdownButtonText: {
       fontSize: 16,
-      color: '#111',
+      color: "#111",
     },
     pickerModalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
       padding: 20,
     },
     pickerModal: {
-      backgroundColor: '#fff',
+      backgroundColor: "#fff",
       borderRadius: 16,
       padding: 20,
-      width: '100%',
+      width: "100%",
       maxWidth: 400,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 4,
@@ -459,35 +459,35 @@ export default function FoodJournal() {
     },
     pickerTitle: {
       fontSize: 18,
-      fontWeight: 'bold',
-      color: '#333',
+      fontWeight: "bold",
+      color: "#333",
       marginBottom: 16,
-      textAlign: 'center',
+      textAlign: "center",
     },
     pickerOption: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingVertical: 16,
       paddingHorizontal: 12,
       borderBottomWidth: 1,
-      borderBottomColor: '#F0F0F0',
+      borderBottomColor: "#F0F0F0",
     },
     pickerOptionText: {
       fontSize: 16,
-      color: '#333',
+      color: "#333",
     },
     pickerCancelButton: {
       marginTop: 12,
       paddingVertical: 14,
-      backgroundColor: '#F5F5F5',
+      backgroundColor: "#F5F5F5",
       borderRadius: 8,
-      alignItems: 'center',
+      alignItems: "center",
     },
     pickerCancelText: {
       fontSize: 16,
-      fontWeight: '600',
-      color: '#666',
+      fontWeight: "600",
+      color: "#666",
     },
     modalOverlay: {
       flex: 1,
@@ -537,8 +537,8 @@ export default function FoodJournal() {
     },
     input: {
       borderWidth: 1,
-      borderColor: '#D1D5DB',
-      backgroundColor: '#fff',
+      borderColor: "#D1D5DB",
+      backgroundColor: "#fff",
       padding: spacing.md,
       borderRadius: 8,
       fontSize: 16,
@@ -675,39 +675,39 @@ export default function FoodJournal() {
     },
     // Meal Details Modal Styles
     mealDetailsModal: {
-      backgroundColor: '#fff',
+      backgroundColor: "#fff",
       borderRadius: 16,
-      width: '90%',
-      maxHeight: '80%',
-      marginHorizontal: '5%',
-      shadowColor: '#000',
+      width: "90%",
+      maxHeight: "80%",
+      marginHorizontal: "5%",
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 4,
       elevation: 5,
     },
     mealDetailsHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       padding: 20,
       borderBottomWidth: 1,
-      borderBottomColor: '#E5E7EB',
+      borderBottomColor: "#E5E7EB",
     },
     mealDetailsTitle: {
       fontSize: 20,
-      fontWeight: 'bold',
-      color: '#000',
+      fontWeight: "bold",
+      color: "#000",
       flex: 1,
     },
     loadingContainer: {
       padding: 40,
-      alignItems: 'center',
+      alignItems: "center",
     },
     loadingText: {
       marginTop: 12,
       fontSize: 14,
-      color: '#666',
+      color: "#666",
     },
     mealDetailsContent: {
       padding: 20,
@@ -720,63 +720,63 @@ export default function FoodJournal() {
     },
     foodItemsTitle: {
       fontSize: 18,
-      fontWeight: 'bold',
-      color: '#000',
+      fontWeight: "bold",
+      color: "#000",
       marginBottom: 12,
     },
     foodDetailCard: {
-      backgroundColor: '#F9FAFB',
+      backgroundColor: "#F9FAFB",
       padding: 16,
       borderRadius: 12,
       marginBottom: 12,
       borderWidth: 1,
-      borderColor: '#E5E7EB',
+      borderColor: "#E5E7EB",
     },
     foodDetailName: {
       fontSize: 16,
-      fontWeight: 'bold',
-      color: '#000',
+      fontWeight: "bold",
+      color: "#000",
       marginBottom: 8,
     },
     foodDetailText: {
       fontSize: 14,
-      color: '#666',
+      color: "#666",
       marginTop: 4,
     },
     mealActionButtons: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       marginTop: 20,
     },
     duplicateMealButton: {
       flex: 1,
-      backgroundColor: '#2196F3',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: "#2196F3",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       padding: 14,
       borderRadius: 12,
       gap: 8,
     },
     duplicateMealButtonText: {
-      color: '#fff',
+      color: "#fff",
       fontSize: 16,
-      fontWeight: 'bold',
+      fontWeight: "bold",
     },
     deleteMealButton: {
       flex: 1,
-      backgroundColor: '#F44336',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      backgroundColor: "#F44336",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       padding: 14,
       borderRadius: 12,
       gap: 8,
     },
     deleteMealButtonText: {
-      color: '#fff',
+      color: "#fff",
       fontSize: 16,
-      fontWeight: 'bold',
+      fontWeight: "bold",
     },
   });
 
@@ -796,11 +796,7 @@ export default function FoodJournal() {
           style={styles.addButton}
           onPress={() => setShowAddMealModal(true)}
         >
-          <Ionicons
-            name="restaurant"
-            size={20}
-            color="#fff"
-          />
+          <Ionicons name="restaurant" size={20} color="#fff" />
           <Text style={styles.addButtonText}>Add Meal</Text>
         </TouchableOpacity>
 
@@ -835,11 +831,7 @@ export default function FoodJournal() {
                     onPress={() => handleDeleteItem(item.tempClientId)}
                     style={styles.deleteButton}
                   >
-                    <Ionicons
-                      name="close"
-                      size={16}
-                      color="#fff"
-                    />
+                    <Ionicons name="close" size={16} color="#fff" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -851,11 +843,7 @@ export default function FoodJournal() {
         {foodItems.length === 0 &&
           (!mealSummary || mealSummary.length === 0) && (
             <View style={styles.emptyState}>
-              <Ionicons
-                name="restaurant-outline"
-                size={64}
-                color="#999"
-              />
+              <Ionicons name="restaurant-outline" size={64} color="#999" />
               <Text style={styles.emptyStateText}>
                 No meals added yet.{"\n"}Tap "Add Meal" to get started!
               </Text>
@@ -863,103 +851,118 @@ export default function FoodJournal() {
           )}
 
         {/* Today's Meals & Past Meals Sections */}
-        {mealSummary && mealSummary.length > 0 && (() => {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          const todaysMeals = mealSummary.filter(meal => {
-            const mealDate = meal.mealTime.toDate();
-            mealDate.setHours(0, 0, 0, 0);
-            return mealDate.getTime() === today.getTime();
-          });
-          
-          const pastMeals = mealSummary.filter(meal => {
-            const mealDate = meal.mealTime.toDate();
-            mealDate.setHours(0, 0, 0, 0);
-            return mealDate.getTime() < today.getTime();
-          });
-          
-          return (
-            <>
-              {/* Today's Meals Section */}
-              {todaysMeals.length > 0 && (
-                <View style={styles.mealSummarySection}>
-                  <Text style={styles.mealSummaryTitle}>Today's Meals</Text>
-                  {todaysMeals.map((item) => (
-                    <TouchableOpacity 
-                      key={item.id}
-                      style={styles.mealSummaryCard}
-                      onPress={() => handleMealClick(item.id)}
-                    >
-                      <View style={styles.mealCardContent}>
-                        <View>
-                          <View style={styles.mealHeaderRow}>
-                            <Text style={styles.mealTypeText}>
-                              {item.mealType ? item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1) : 'Meal'}
-                            </Text>
-                            <Text style={styles.mealSummaryName}>
-                              {item.mealName || "Unnamed Meal"}
-                            </Text>
-                          </View>
-                          <Text style={styles.mealTimeText}>
-                            {item.mealTime.toDate().toLocaleTimeString('en-US', { 
-                              hour: 'numeric', 
-                              minute: '2-digit',
-                              hour12: true 
-                            })}
-                          </Text>
-                        </View>
-                        {item.totalCalories > 0 && (
-                          <Text style={styles.mealCalories}>{item.totalCalories} cal</Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-              
-              {/* Past Meals Section */}
-              {pastMeals.length > 0 && (
-                <View style={styles.mealSummarySection}>
-                  <Text style={styles.mealSummaryTitle}>Past Meals</Text>
-                  {pastMeals.map((item) => (
-                    <TouchableOpacity 
-                      key={item.id}
-                      style={styles.mealSummaryCard}
-                      onPress={() => handleMealClick(item.id)}
-                    >
-                      <View style={styles.mealCardContent}>
-                        <View>
-                          <View style={styles.mealHeaderRow}>
-                            <Text style={styles.mealDateText}>
-                              {item.mealTime.toDate().toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric' 
-                              })}
-                            </Text>
-                            <Text style={styles.mealSummaryName}>
-                              {item.mealName || "Unnamed Meal"}
+        {mealSummary &&
+          mealSummary.length > 0 &&
+          (() => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const todaysMeals = mealSummary.filter((meal) => {
+              const mealDate = meal.mealTime.toDate();
+              mealDate.setHours(0, 0, 0, 0);
+              return mealDate.getTime() === today.getTime();
+            });
+
+            const pastMeals = mealSummary.filter((meal) => {
+              const mealDate = meal.mealTime.toDate();
+              mealDate.setHours(0, 0, 0, 0);
+              return mealDate.getTime() < today.getTime();
+            });
+
+            return (
+              <>
+                {/* Today's Meals Section */}
+                {todaysMeals.length > 0 && (
+                  <View style={styles.mealSummarySection}>
+                    <Text style={styles.mealSummaryTitle}>Today's Meals</Text>
+                    {todaysMeals.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={styles.mealSummaryCard}
+                        onPress={() => handleMealClick(item.id)}
+                      >
+                        <View style={styles.mealCardContent}>
+                          <View>
+                            <View style={styles.mealHeaderRow}>
+                              <Text style={styles.mealTypeText}>
+                                {item.mealType
+                                  ? item.mealType.charAt(0).toUpperCase() +
+                                    item.mealType.slice(1)
+                                  : "Meal"}
+                              </Text>
+                              <Text style={styles.mealSummaryName}>
+                                {item.mealName || "Unnamed Meal"}
+                              </Text>
+                            </View>
+                            <Text style={styles.mealTimeText}>
+                              {item.mealTime
+                                .toDate()
+                                .toLocaleTimeString("en-US", {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })}
                             </Text>
                           </View>
-                          <Text style={styles.mealTimeText}>
-                            {item.mealTime.toDate().toLocaleTimeString('en-US', { 
-                              hour: 'numeric', 
-                              minute: '2-digit',
-                              hour12: true 
-                            })}
-                          </Text>
+                          {item.totalCalories > 0 && (
+                            <Text style={styles.mealCalories}>
+                              {item.totalCalories} cal
+                            </Text>
+                          )}
                         </View>
-                        {item.totalCalories > 0 && (
-                          <Text style={styles.mealCalories}>{item.totalCalories} cal</Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </>
-          );
-        })()}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {/* Past Meals Section */}
+                {pastMeals.length > 0 && (
+                  <View style={styles.mealSummarySection}>
+                    <Text style={styles.mealSummaryTitle}>Past Meals</Text>
+                    {pastMeals.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={styles.mealSummaryCard}
+                        onPress={() => handleMealClick(item.id)}
+                      >
+                        <View style={styles.mealCardContent}>
+                          <View>
+                            <View style={styles.mealHeaderRow}>
+                              <Text style={styles.mealDateText}>
+                                {item.mealTime
+                                  .toDate()
+                                  .toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                              </Text>
+                              <Text style={styles.mealSummaryName}>
+                                {item.mealName || "Unnamed Meal"}
+                              </Text>
+                            </View>
+                            <Text style={styles.mealTimeText}>
+                              {item.mealTime
+                                .toDate()
+                                .toLocaleTimeString("en-US", {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })}
+                            </Text>
+                          </View>
+                          {item.totalCalories > 0 && (
+                            <Text style={styles.mealCalories}>
+                              {item.totalCalories} cal
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </>
+            );
+          })()}
       </ScrollView>
 
       {/* Add Meal Modal */}
@@ -1026,11 +1029,7 @@ export default function FoodJournal() {
                   style={styles.scanButton}
                   onPress={() => setShowScanner(true)}
                 >
-                  <Ionicons
-                    name="scan"
-                    size={20}
-                    color="#fff"
-                  />
+                  <Ionicons name="scan" size={20} color="#fff" />
                   <Text style={styles.scanButtonText}>Scan Barcode</Text>
                 </TouchableOpacity>
 
@@ -1126,16 +1125,21 @@ export default function FoodJournal() {
               {/* Current Food Items List */}
               {foodItems.length > 0 && (
                 <View style={styles.formSection}>
-                  <Text style={styles.label}>Items in this meal ({foodItems.length})</Text>
+                  <Text style={styles.label}>
+                    Items in this meal ({foodItems.length})
+                  </Text>
                   {foodItems.map((item, index) => (
-                    <View key={item.tempClientId || index} style={styles.foodItemCard}>
+                    <View
+                      key={item.tempClientId || index}
+                      style={styles.foodItemCard}
+                    >
                       <View style={{ flex: 1 }}>
                         <Text style={styles.foodItemName}>{item.foodName}</Text>
                         <Text style={styles.foodItemMacros}>
-                          {item.calories ? `${item.calories} cal` : ''} 
-                          {item.protein ? ` • ${item.protein}g protein` : ''} 
-                          {item.carbs ? ` • ${item.carbs}g carbs` : ''} 
-                          {item.fat ? ` • ${item.fat}g fat` : ''}
+                          {item.calories ? `${item.calories} cal` : ""}
+                          {item.protein ? ` • ${item.protein}g protein` : ""}
+                          {item.carbs ? ` • ${item.carbs}g carbs` : ""}
+                          {item.fat ? ` • ${item.fat}g fat` : ""}
                         </Text>
                       </View>
                       <TouchableOpacity
@@ -1149,18 +1153,14 @@ export default function FoodJournal() {
                     </View>
                   ))}
                 </View>
-              )}    
-              
+              )}
+
               {/* Submit Meal Button */}
               <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleSubmitMeal}
               >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={24}
-                  color="#fff"
-                />
+                <Ionicons name="checkmark-circle" size={24} color="#fff" />
                 <Text style={styles.submitButtonText}>Submit Meal</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -1202,35 +1202,35 @@ export default function FoodJournal() {
             {!loadingMealDetails && selectedMealDetails && (
               <ScrollView style={styles.mealDetailsContent}>
                 <Text style={styles.foodItemsTitle}>Food Items:</Text>
-                
+
                 {selectedMealDetails.foodItems.map((item, index) => (
                   <View key={index} style={styles.foodDetailCard}>
                     <Text style={styles.foodDetailName}>{item.foodName}</Text>
-                    
+
                     {item.calories != null && (
                       <Text style={styles.foodDetailText}>
                         Calories: {item.calories}
                       </Text>
                     )}
-                    
+
                     {item.protein != null && (
                       <Text style={styles.foodDetailText}>
                         Protein: {item.protein}g
                       </Text>
                     )}
-                    
+
                     {item.carbs != null && (
                       <Text style={styles.foodDetailText}>
                         Carbs: {item.carbs}g
                       </Text>
                     )}
-                    
+
                     {item.fat != null && (
                       <Text style={styles.foodDetailText}>
                         Fat: {item.fat}g
                       </Text>
                     )}
-                    
+
                     {item.sugar != null && (
                       <Text style={styles.foodDetailText}>
                         Sugar: {item.sugar}g
@@ -1280,16 +1280,16 @@ export default function FoodJournal() {
         >
           <View style={styles.pickerModal}>
             <Text style={styles.pickerTitle}>Select Meal Type</Text>
-            
+
             <TouchableOpacity
               style={styles.pickerOption}
               onPress={() => {
-                setMealType('breakfast');
+                setMealType("breakfast");
                 setShowMealTypePicker(false);
               }}
             >
               <Text style={styles.pickerOptionText}>🌅 Breakfast</Text>
-              {mealType === 'breakfast' && (
+              {mealType === "breakfast" && (
                 <Ionicons name="checkmark" size={24} color="#4CAF50" />
               )}
             </TouchableOpacity>
@@ -1297,12 +1297,12 @@ export default function FoodJournal() {
             <TouchableOpacity
               style={styles.pickerOption}
               onPress={() => {
-                setMealType('lunch');
+                setMealType("lunch");
                 setShowMealTypePicker(false);
               }}
             >
               <Text style={styles.pickerOptionText}>☀️ Lunch</Text>
-              {mealType === 'lunch' && (
+              {mealType === "lunch" && (
                 <Ionicons name="checkmark" size={24} color="#4CAF50" />
               )}
             </TouchableOpacity>
@@ -1310,12 +1310,12 @@ export default function FoodJournal() {
             <TouchableOpacity
               style={styles.pickerOption}
               onPress={() => {
-                setMealType('dinner');
+                setMealType("dinner");
                 setShowMealTypePicker(false);
               }}
             >
               <Text style={styles.pickerOptionText}>🌙 Dinner</Text>
-              {mealType === 'dinner' && (
+              {mealType === "dinner" && (
                 <Ionicons name="checkmark" size={24} color="#4CAF50" />
               )}
             </TouchableOpacity>
@@ -1323,12 +1323,12 @@ export default function FoodJournal() {
             <TouchableOpacity
               style={styles.pickerOption}
               onPress={() => {
-                setMealType('snack');
+                setMealType("snack");
                 setShowMealTypePicker(false);
               }}
             >
               <Text style={styles.pickerOptionText}>🍿 Snack</Text>
-              {mealType === 'snack' && (
+              {mealType === "snack" && (
                 <Ionicons name="checkmark" size={24} color="#4CAF50" />
               )}
             </TouchableOpacity>

@@ -3,7 +3,11 @@ import { AppLogo } from "@/components/AppLogo";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { useAuth } from "@/contexts/authContext";
 import { useUserInfo } from "@/hooks/useUserInfo";
-import { checkForAllergens, getAllergenAlertMessage, getSeverityText } from "@/utils/allergen.detector";
+import {
+  checkForAllergens,
+  getAllergenAlertMessage,
+  getSeverityText,
+} from "@/utils/allergen.detector";
 import { getLastWeekHealthData } from "@/utils/health.repo";
 import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import { ProductData } from "@/utils/types/foodJournal.types";
@@ -24,19 +28,21 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 export default function Home() {
   const { currentUser, accountSignOut } = useAuth();
   const userData = useUserInfo();
   const colors = useThemeColors();
-  
+
   const [showQuickScan, setShowQuickScan] = useState(false);
   const [showAddGoalModal, setShowAddGoalModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showProductDetailsModal, setShowProductDetailsModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(
+    null
+  );
   const [healthData, setHealthData] = useState<DailyHealthData | null>(null);
   const [nutritionData, setNutritionData] = useState<any>(null);
   const [showEditGoalModal, setShowEditGoalModal] = useState(false);
@@ -45,7 +51,21 @@ export default function Home() {
   const [newGoal, setNewGoal] = useState({
     name: "",
     description: "",
-    type: "" as "" | "steps" | "distance" | "totalCalories" | "calories" | "activeMinutes" | "weight" | "protein" | "carbs" | "fat" | "fiber" | "sugar" | "water" | "general",
+    type: "" as
+      | ""
+      | "steps"
+      | "distance"
+      | "totalCalories"
+      | "calories"
+      | "activeMinutes"
+      | "weight"
+      | "protein"
+      | "carbs"
+      | "fat"
+      | "fiber"
+      | "sugar"
+      | "water"
+      | "general",
     targetValue: "",
   });
 
@@ -57,17 +77,17 @@ export default function Home() {
 
     try {
       const weekData = await getLastWeekHealthData(currentUser.uid);
-      
+
       // Find TODAY's data specifically
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      const todayData = weekData.find(day => {
+
+      const todayData = weekData.find((day) => {
         const dayDate = day.date.toDate();
         dayDate.setHours(0, 0, 0, 0);
         return dayDate.getTime() === today.getTime();
       });
-      
+
       // If today's data exists, use it; otherwise use the most recent
       if (todayData) {
         setHealthData(todayData);
@@ -75,7 +95,10 @@ export default function Home() {
         setHealthData(weekData[weekData.length - 1]);
       }
 
-      const nutritionResult = await calculateDailyNutritionFromMeals(currentUser.uid, new Date());
+      const nutritionResult = await calculateDailyNutritionFromMeals(
+        currentUser.uid,
+        new Date()
+      );
       setNutritionData(nutritionResult);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -101,15 +124,13 @@ export default function Home() {
     day: "numeric",
   });
 
-
-
   const currentGoalCount = userData.profile?.currentGoals?.length || 0;
 
   // Check for prohibited ingredients
-  // Handle Quick Scan 
+  // Handle Quick Scan
   const handleQuickScan = (product: ProductData) => {
     setShowQuickScan(false);
-    
+
     // Check if ingredients exist
     if (!product.ingredients || product.ingredients.length === 0) {
       Alert.alert(
@@ -125,16 +146,18 @@ export default function Home() {
       );
       return;
     }
-    
+
     // Use comprehensive allergen detector
     const prohibited = userData.profile?.prohibitedIngredients || [];
     const allergenMatches = checkForAllergens(product.ingredients, prohibited);
 
     if (allergenMatches.length > 0) {
-      const highestSeverity = Math.max(...allergenMatches.map(m => m.severity));
+      const highestSeverity = Math.max(
+        ...allergenMatches.map((m) => m.severity)
+      );
       const severityText = getSeverityText(highestSeverity);
       const alertMessage = getAllergenAlertMessage(allergenMatches);
-      
+
       Alert.alert(
         `🚨 ${severityText} ALLERGEN WARNING`,
         `${product.productName}\n\n${alertMessage}\n\nThis product contains ingredients you've marked as prohibited.\n\n⚠️ DISCLAIMER: Always verify ingredients on the physical product label. This scanner may not detect all allergens or may have outdated information. When in doubt, do not consume.`,
@@ -174,7 +197,9 @@ export default function Home() {
     }
 
     // Check if goal type already exists
-    const existingGoal = userData.profile?.currentGoals?.find(g => g.type === newGoal.type);
+    const existingGoal = userData.profile?.currentGoals?.find(
+      (g) => g.type === newGoal.type
+    );
     if (existingGoal) {
       Alert.alert(
         "Duplicate Goal Type",
@@ -189,13 +214,17 @@ export default function Home() {
         name: newGoal.name,
         description: newGoal.description,
         type: newGoal.type,
-        targetValue: newGoal.targetValue ? parseFloat(newGoal.targetValue) : undefined,
-        endDate: Timestamp.fromDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+        targetValue: newGoal.targetValue
+          ? parseFloat(newGoal.targetValue)
+          : undefined,
+        endDate: Timestamp.fromDate(
+          new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        ),
         startDate: Timestamp.now(),
       };
 
       await updateUserInfo(currentUser.uid, { goal: goalData });
-      
+
       setShowAddGoalModal(false);
       setNewGoal({
         name: "",
@@ -203,7 +232,7 @@ export default function Home() {
         type: "",
         targetValue: "",
       });
-      
+
       Alert.alert("Success", "Goal added successfully!");
     } catch (error: any) {
       console.error("Error adding goal:", error);
@@ -213,27 +242,23 @@ export default function Home() {
 
   // Handle Delete Goal
   const handleDeleteGoal = (goalId: string) => {
-    Alert.alert(
-      "Delete Goal",
-      "Are you sure you want to delete this goal?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const { deleteGoal } = require("@/utils/user.repo");
-              await deleteGoal(currentUser.uid, "currentGoals", "goalId", goalId);
-              Alert.alert("Success", "Goal deleted!");
-            } catch (error) {
-              console.error("Error deleting goal:", error);
-              Alert.alert("Error", "Failed to delete goal");
-            }
-          },
+    Alert.alert("Delete Goal", "Are you sure you want to delete this goal?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const { deleteGoal } = require("@/utils/user.repo");
+            await deleteGoal(currentUser.uid, "currentGoals", "goalId", goalId);
+            Alert.alert("Success", "Goal deleted!");
+          } catch (error) {
+            console.error("Error deleting goal:", error);
+            Alert.alert("Error", "Failed to delete goal");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   // Handle Edit Goal
@@ -257,7 +282,7 @@ export default function Home() {
 
     // Check if goal type already exists (but allow if it's the same goal being edited)
     const existingGoal = userData.profile?.currentGoals?.find(
-      g => g.type === newGoal.type && g.goalId !== editingGoal.goalId
+      (g) => g.type === newGoal.type && g.goalId !== editingGoal.goalId
     );
     if (existingGoal) {
       Alert.alert(
@@ -270,17 +295,25 @@ export default function Home() {
 
     try {
       const { updateGoalInArray } = require("@/utils/user.repo");
-      
+
       const updatedGoal: Goal = {
         ...editingGoal,
         name: newGoal.name,
         description: newGoal.description,
         type: newGoal.type,
-        targetValue: newGoal.targetValue ? parseFloat(newGoal.targetValue) : undefined,
+        targetValue: newGoal.targetValue
+          ? parseFloat(newGoal.targetValue)
+          : undefined,
       };
 
-      await updateGoalInArray(currentUser.uid, "currentGoals", "goalId", editingGoal.goalId!, updatedGoal);
-      
+      await updateGoalInArray(
+        currentUser.uid,
+        "currentGoals",
+        "goalId",
+        editingGoal.goalId!,
+        updatedGoal
+      );
+
       setShowEditGoalModal(false);
       setEditingGoal(null);
       setNewGoal({
@@ -289,7 +322,7 @@ export default function Home() {
         type: "",
         targetValue: "",
       });
-      
+
       Alert.alert("Success", "Goal updated successfully!");
     } catch (error: any) {
       console.error("Error updating goal:", error);
@@ -303,25 +336,25 @@ export default function Home() {
 
   const getCurrentValueForGoal = (goal: Goal): number => {
     if (!goal.type) return 0;
-    
+
     switch (goal.type) {
-      case 'steps':
+      case "steps":
         return healthData?.steps || 0;
-      case 'distance':
+      case "distance":
         return healthData?.distance || 0;
-      case 'calories':
+      case "calories":
         return healthData?.calories || 0;
-      case 'weight':
+      case "weight":
         return healthData?.weight || 0;
-      case 'totalCalories':
+      case "totalCalories":
         return nutritionData?.totalCalories || 0;
-      case 'protein':
+      case "protein":
         return nutritionData?.protein || 0;
-      case 'carbs':
+      case "carbs":
         return nutritionData?.carbs || 0;
-      case 'fat':
+      case "fat":
         return nutritionData?.fat || 0;
-      case 'sugar':
+      case "sugar":
         return nutritionData?.sugar || 0;
       default:
         return 0;
@@ -330,20 +363,33 @@ export default function Home() {
 
   const getGoalUnit = (type: string | undefined) => {
     if (!type) return "";
-    switch(type) {
-      case "steps": return " steps/day";
-      case "distance": return " mi/day";
-      case "totalCalories": return " cal/day";
-      case "calories": return " cal/day";
-      case "activeMinutes": return " min/day";
-      case "weight": return " lbs";
-      case "protein": return "g/day";
-      case "carbs": return "g/day";
-      case "fat": return "g/day";
-      case "fiber": return "g/day";
-      case "sugar": return "g/day";
-      case "water": return " oz/day";
-      default: return "";
+    switch (type) {
+      case "steps":
+        return " steps/day";
+      case "distance":
+        return " mi/day";
+      case "totalCalories":
+        return " cal/day";
+      case "calories":
+        return " cal/day";
+      case "activeMinutes":
+        return " min/day";
+      case "weight":
+        return " lbs";
+      case "protein":
+        return "g/day";
+      case "carbs":
+        return "g/day";
+      case "fat":
+        return "g/day";
+      case "fiber":
+        return "g/day";
+      case "sugar":
+        return "g/day";
+      case "water":
+        return " oz/day";
+      default:
+        return "";
     }
   };
 
@@ -363,9 +409,13 @@ export default function Home() {
             style={styles.profileButton}
             onPress={() => setShowProfileMenu(!showProfileMenu)}
           >
-            <Ionicons name="person-circle-outline" size={32} color={colors.primary} />
+            <Ionicons
+              name="person-circle-outline"
+              size={32}
+              color={colors.primary}
+            />
           </TouchableOpacity>
-          
+
           {/* Profile Dropdown Menu */}
           {showProfileMenu && (
             <View style={styles.profileMenu}>
@@ -379,9 +429,9 @@ export default function Home() {
                 <Ionicons name="settings-outline" size={20} color="#333" />
                 <Text style={styles.profileMenuText}>Settings</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.profileMenuDivider} />
-              
+
               <TouchableOpacity
                 style={styles.profileMenuItem}
                 onPress={() => {
@@ -390,15 +440,17 @@ export default function Home() {
                 }}
               >
                 <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-                <Text style={[styles.profileMenuText, { color: "#EF4444" }]}>Sign Out</Text>
+                <Text style={[styles.profileMenuText, { color: "#EF4444" }]}>
+                  Sign Out
+                </Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         onTouchStart={() => setShowProfileMenu(false)}
@@ -413,11 +465,14 @@ export default function Home() {
       >
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
-          <AppLogo size={72} style={{ alignSelf: 'center', marginBottom: 12 }} />
+          <AppLogo
+            size={72}
+            style={{ alignSelf: "center", marginBottom: 12 }}
+          />
           <Text style={styles.welcomeTitle}>Welcome to Smart Health</Text>
           <Text style={styles.welcomeSubtitle}>
-            Track your nutrition, monitor fitness goals, and connect with health experts.
-            Start your wellness journey today!
+            Track your nutrition, monitor fitness goals, and connect with health
+            experts. Start your wellness journey today!
           </Text>
         </View>
 
@@ -432,11 +487,19 @@ export default function Home() {
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.pastelGreen }]}
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.pastelGreen },
+            ]}
             onPress={() => setShowQuickScan(true)}
           >
             <Ionicons name="scan" size={24} color={colors.pastelGreenText} />
-            <Text style={[styles.actionButtonText, { color: colors.pastelGreenText }]}>
+            <Text
+              style={[
+                styles.actionButtonText,
+                { color: colors.pastelGreenText },
+              ]}
+            >
               Quick Scan
             </Text>
           </TouchableOpacity>
@@ -446,7 +509,9 @@ export default function Home() {
             onPress={() => setShowAddGoalModal(true)}
           >
             <Ionicons name="add-circle" size={24} color="#fff" />
-            <Text style={[styles.actionButtonText, { color: "#fff" }]}>Add Goal</Text>
+            <Text style={[styles.actionButtonText, { color: "#fff" }]}>
+              Add Goal
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -494,10 +559,13 @@ export default function Home() {
         {/* My Goals */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🎯 My Daily Goals ({currentGoalCount}/5)</Text>
+            <Text style={styles.sectionTitle}>
+              🎯 My Daily Goals ({currentGoalCount}/5)
+            </Text>
           </View>
 
-          {userData.profile?.currentGoals && userData.profile.currentGoals.length > 0 ? (
+          {userData.profile?.currentGoals &&
+          userData.profile.currentGoals.length > 0 ? (
             userData.profile.currentGoals.map((goal) => (
               <TouchableOpacity
                 key={goal.goalId}
@@ -508,14 +576,15 @@ export default function Home() {
                     `What would you like to do with "${goal.name}"?`,
                     [
                       { text: "Cancel", style: "cancel" },
-                      { 
-                        text: "Edit", 
-                        onPress: () => handleEditGoal(goal)
+                      {
+                        text: "Edit",
+                        onPress: () => handleEditGoal(goal),
                       },
-                      { 
-                        text: "Delete", 
-                        style: "destructive", 
-                        onPress: () => goal.goalId && handleDeleteGoal(goal.goalId)
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () =>
+                          goal.goalId && handleDeleteGoal(goal.goalId),
                       },
                     ]
                   );
@@ -528,10 +597,15 @@ export default function Home() {
                         style={[
                           styles.goalBadge,
                           {
-                            backgroundColor:
-                              ["steps", "distance", "calories", "activeMinutes", "weight"].includes(goal.type)
-                                ? "#E3F2FD"
-                                : "#FFF3E0",
+                            backgroundColor: [
+                              "steps",
+                              "distance",
+                              "calories",
+                              "activeMinutes",
+                              "weight",
+                            ].includes(goal.type)
+                              ? "#E3F2FD"
+                              : "#FFF3E0",
                           },
                         ]}
                       >
@@ -539,14 +613,25 @@ export default function Home() {
                           style={[
                             styles.goalBadgeText,
                             {
-                              color:
-                                ["steps", "distance", "calories", "activeMinutes", "weight"].includes(goal.type)
-                                  ? "#1976D2"
-                                  : "#F57C00",
+                              color: [
+                                "steps",
+                                "distance",
+                                "calories",
+                                "activeMinutes",
+                                "weight",
+                              ].includes(goal.type)
+                                ? "#1976D2"
+                                : "#F57C00",
                             },
                           ]}
                         >
-                          {["steps", "distance", "calories", "activeMinutes", "weight"].includes(goal.type)
+                          {[
+                            "steps",
+                            "distance",
+                            "calories",
+                            "activeMinutes",
+                            "weight",
+                          ].includes(goal.type)
                             ? "HEALTH"
                             : "NUTRITION"}
                         </Text>
@@ -555,7 +640,8 @@ export default function Home() {
                     <Text style={styles.goalName}>{goal.name}</Text>
                     {goal.targetValue && (
                       <Text style={styles.goalTarget}>
-                        Target: {goal.targetValue.toLocaleString()}{getGoalUnit(goal.type)}
+                        Target: {goal.targetValue.toLocaleString()}
+                        {getGoalUnit(goal.type)}
                       </Text>
                     )}
                   </View>
@@ -564,13 +650,15 @@ export default function Home() {
                 {goal.description && (
                   <Text style={styles.goalDescription}>{goal.description}</Text>
                 )}
-                
+
                 {/* Progress Bar */}
                 {goal.targetValue && goal.type && (
                   <View style={styles.goalProgressSection}>
                     <View style={styles.goalProgressHeader}>
                       <Text style={styles.goalProgressValue}>
-                        {getCurrentValueForGoal(goal).toLocaleString()} / {goal.targetValue.toLocaleString()}{getGoalUnit(goal.type)}
+                        {getCurrentValueForGoal(goal).toLocaleString()} /{" "}
+                        {goal.targetValue.toLocaleString()}
+                        {getGoalUnit(goal.type)}
                       </Text>
                     </View>
                     <View style={styles.goalProgressBarContainer}>
@@ -578,15 +666,34 @@ export default function Home() {
                         style={[
                           styles.goalProgressBar,
                           {
-                            width: `${Math.min(calculateProgress(getCurrentValueForGoal(goal), goal.targetValue), 100)}%`,
-                            backgroundColor: calculateProgress(getCurrentValueForGoal(goal), goal.targetValue) >= 100 ? '#4CAF50' : '#2196F3',
+                            width: `${Math.min(
+                              calculateProgress(
+                                getCurrentValueForGoal(goal),
+                                goal.targetValue
+                              ),
+                              100
+                            )}%`,
+                            backgroundColor:
+                              calculateProgress(
+                                getCurrentValueForGoal(goal),
+                                goal.targetValue
+                              ) >= 100
+                                ? "#4CAF50"
+                                : "#2196F3",
                           },
                         ]}
                       />
                     </View>
                     <Text style={styles.goalProgressText}>
-                      {calculateProgress(getCurrentValueForGoal(goal), goal.targetValue).toFixed(0)}% Complete
-                      {calculateProgress(getCurrentValueForGoal(goal), goal.targetValue) >= 100 && ' ✓'}
+                      {calculateProgress(
+                        getCurrentValueForGoal(goal),
+                        goal.targetValue
+                      ).toFixed(0)}
+                      % Complete
+                      {calculateProgress(
+                        getCurrentValueForGoal(goal),
+                        goal.targetValue
+                      ) >= 100 && " ✓"}
                     </Text>
                   </View>
                 )}
@@ -595,11 +702,15 @@ export default function Home() {
           ) : (
             <View style={styles.emptyGoals}>
               <Text style={styles.emptyGoalsText}>No goals yet</Text>
-              <Text style={styles.emptyGoalsSubtext}>Tap "Add Goal" to get started!</Text>
+              <Text style={styles.emptyGoalsSubtext}>
+                Tap "Add Goal" to get started!
+              </Text>
             </View>
           )}
 
-          <Text style={styles.goalHint}>💡 Long press any goal to edit or delete</Text>
+          <Text style={styles.goalHint}>
+            💡 Long press any goal to edit or delete
+          </Text>
         </View>
       </ScrollView>
 
@@ -641,7 +752,9 @@ export default function Home() {
                 style={styles.modalInput}
                 placeholder="What do you want to achieve?"
                 value={newGoal.description}
-                onChangeText={(text) => setNewGoal({ ...newGoal, description: text })}
+                onChangeText={(text) =>
+                  setNewGoal({ ...newGoal, description: text })
+                }
                 multiline
               />
 
@@ -658,14 +771,18 @@ export default function Home() {
                     key={type.value}
                     style={[
                       styles.goalTypeButton,
-                      newGoal.type === type.value && styles.goalTypeButtonActive,
+                      newGoal.type === type.value &&
+                        styles.goalTypeButtonActive,
                     ]}
-                    onPress={() => setNewGoal({ ...newGoal, type: type.value as any })}
+                    onPress={() =>
+                      setNewGoal({ ...newGoal, type: type.value as any })
+                    }
                   >
                     <Text
                       style={[
                         styles.goalTypeButtonText,
-                        newGoal.type === type.value && styles.goalTypeButtonTextActive,
+                        newGoal.type === type.value &&
+                          styles.goalTypeButtonTextActive,
                       ]}
                     >
                       {type.label}
@@ -686,14 +803,18 @@ export default function Home() {
                     key={type.value}
                     style={[
                       styles.goalTypeButton,
-                      newGoal.type === type.value && styles.goalTypeButtonActive,
+                      newGoal.type === type.value &&
+                        styles.goalTypeButtonActive,
                     ]}
-                    onPress={() => setNewGoal({ ...newGoal, type: type.value as any })}
+                    onPress={() =>
+                      setNewGoal({ ...newGoal, type: type.value as any })
+                    }
                   >
                     <Text
                       style={[
                         styles.goalTypeButtonText,
-                        newGoal.type === type.value && styles.goalTypeButtonTextActive,
+                        newGoal.type === type.value &&
+                          styles.goalTypeButtonTextActive,
                       ]}
                     >
                       {type.label}
@@ -712,14 +833,18 @@ export default function Home() {
                     key={type.value}
                     style={[
                       styles.goalTypeButton,
-                      newGoal.type === type.value && styles.goalTypeButtonActive,
+                      newGoal.type === type.value &&
+                        styles.goalTypeButtonActive,
                     ]}
-                    onPress={() => setNewGoal({ ...newGoal, type: type.value as any })}
+                    onPress={() =>
+                      setNewGoal({ ...newGoal, type: type.value as any })
+                    }
                   >
                     <Text
                       style={[
                         styles.goalTypeButtonText,
-                        newGoal.type === type.value && styles.goalTypeButtonTextActive,
+                        newGoal.type === type.value &&
+                          styles.goalTypeButtonTextActive,
                       ]}
                     >
                       {type.label}
@@ -734,36 +859,60 @@ export default function Home() {
                   <TextInput
                     style={styles.modalInput}
                     placeholder={
-                      newGoal.type === "steps" ? "e.g., 10000" :
-                      newGoal.type === "distance" ? "e.g., 5" :
-                      newGoal.type === "totalCalories" ? "e.g., 2000" :
-                      newGoal.type === "calories" ? "e.g., 500" :
-                      newGoal.type === "activeMinutes" ? "e.g., 30" :
-                      newGoal.type === "weight" ? "e.g., 150" :
-                      newGoal.type === "protein" ? "e.g., 150" :
-                      newGoal.type === "carbs" ? "e.g., 200" :
-                      newGoal.type === "fat" ? "e.g., 70" :
-                      newGoal.type === "fiber" ? "e.g., 30" :
-                      newGoal.type === "water" ? "e.g., 64" :
-                      "e.g., 50"
+                      newGoal.type === "steps"
+                        ? "e.g., 10000"
+                        : newGoal.type === "distance"
+                        ? "e.g., 5"
+                        : newGoal.type === "totalCalories"
+                        ? "e.g., 2000"
+                        : newGoal.type === "calories"
+                        ? "e.g., 500"
+                        : newGoal.type === "activeMinutes"
+                        ? "e.g., 30"
+                        : newGoal.type === "weight"
+                        ? "e.g., 150"
+                        : newGoal.type === "protein"
+                        ? "e.g., 150"
+                        : newGoal.type === "carbs"
+                        ? "e.g., 200"
+                        : newGoal.type === "fat"
+                        ? "e.g., 70"
+                        : newGoal.type === "fiber"
+                        ? "e.g., 30"
+                        : newGoal.type === "water"
+                        ? "e.g., 64"
+                        : "e.g., 50"
                     }
                     keyboardType="numeric"
                     value={newGoal.targetValue}
-                    onChangeText={(text) => setNewGoal({ ...newGoal, targetValue: text })}
+                    onChangeText={(text) =>
+                      setNewGoal({ ...newGoal, targetValue: text })
+                    }
                   />
                   <Text style={styles.targetHint}>
-                    {newGoal.type === "steps" ? "Daily step goal" :
-                     newGoal.type === "distance" ? "Daily distance in miles" :
-                     newGoal.type === "totalCalories" ? "Daily calorie intake goal" :
-                     newGoal.type === "calories" ? "Daily calories burned goal" :
-                     newGoal.type === "activeMinutes" ? "Daily active minutes goal" :
-                     newGoal.type === "weight" ? "Target weight in pounds" :
-                     newGoal.type === "protein" ? "Daily protein intake in grams" :
-                     newGoal.type === "carbs" ? "Daily carbs intake in grams" :
-                     newGoal.type === "fat" ? "Daily fat intake in grams" :
-                     newGoal.type === "fiber" ? "Daily fiber intake in grams" :
-                     newGoal.type === "water" ? "Daily water intake in ounces" :
-                     "Daily sugar intake in grams"}
+                    {newGoal.type === "steps"
+                      ? "Daily step goal"
+                      : newGoal.type === "distance"
+                      ? "Daily distance in miles"
+                      : newGoal.type === "totalCalories"
+                      ? "Daily calorie intake goal"
+                      : newGoal.type === "calories"
+                      ? "Daily calories burned goal"
+                      : newGoal.type === "activeMinutes"
+                      ? "Daily active minutes goal"
+                      : newGoal.type === "weight"
+                      ? "Target weight in pounds"
+                      : newGoal.type === "protein"
+                      ? "Daily protein intake in grams"
+                      : newGoal.type === "carbs"
+                      ? "Daily carbs intake in grams"
+                      : newGoal.type === "fat"
+                      ? "Daily fat intake in grams"
+                      : newGoal.type === "fiber"
+                      ? "Daily fiber intake in grams"
+                      : newGoal.type === "water"
+                      ? "Daily water intake in ounces"
+                      : "Daily sugar intake in grams"}
                   </Text>
                 </>
               )}
@@ -783,11 +932,12 @@ export default function Home() {
                 >
                   <Text style={styles.modalButtonCancelText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
                     styles.modalButtonSave,
-                    (!newGoal.name || !newGoal.type) && styles.modalButtonDisabled
-                  ]} 
+                    (!newGoal.name || !newGoal.type) &&
+                      styles.modalButtonDisabled,
+                  ]}
                   onPress={handleAddGoal}
                   disabled={!newGoal.name || !newGoal.type}
                 >
@@ -827,7 +977,9 @@ export default function Home() {
                 style={styles.modalInput}
                 placeholder="What do you want to achieve?"
                 value={newGoal.description}
-                onChangeText={(text) => setNewGoal({ ...newGoal, description: text })}
+                onChangeText={(text) =>
+                  setNewGoal({ ...newGoal, description: text })
+                }
                 multiline
               />
 
@@ -844,14 +996,18 @@ export default function Home() {
                     key={type.value}
                     style={[
                       styles.goalTypeButton,
-                      newGoal.type === type.value && styles.goalTypeButtonActive,
+                      newGoal.type === type.value &&
+                        styles.goalTypeButtonActive,
                     ]}
-                    onPress={() => setNewGoal({ ...newGoal, type: type.value as any })}
+                    onPress={() =>
+                      setNewGoal({ ...newGoal, type: type.value as any })
+                    }
                   >
                     <Text
                       style={[
                         styles.goalTypeButtonText,
-                        newGoal.type === type.value && styles.goalTypeButtonTextActive,
+                        newGoal.type === type.value &&
+                          styles.goalTypeButtonTextActive,
                       ]}
                     >
                       {type.label}
@@ -874,14 +1030,18 @@ export default function Home() {
                     key={type.value}
                     style={[
                       styles.goalTypeButton,
-                      newGoal.type === type.value && styles.goalTypeButtonActive,
+                      newGoal.type === type.value &&
+                        styles.goalTypeButtonActive,
                     ]}
-                    onPress={() => setNewGoal({ ...newGoal, type: type.value as any })}
+                    onPress={() =>
+                      setNewGoal({ ...newGoal, type: type.value as any })
+                    }
                   >
                     <Text
                       style={[
                         styles.goalTypeButtonText,
-                        newGoal.type === type.value && styles.goalTypeButtonTextActive,
+                        newGoal.type === type.value &&
+                          styles.goalTypeButtonTextActive,
                       ]}
                     >
                       {type.label}
@@ -900,7 +1060,9 @@ export default function Home() {
                     style={styles.modalInput}
                     placeholder="e.g., 10000"
                     value={newGoal.targetValue}
-                    onChangeText={(text) => setNewGoal({ ...newGoal, targetValue: text })}
+                    onChangeText={(text) =>
+                      setNewGoal({ ...newGoal, targetValue: text })
+                    }
                     keyboardType="numeric"
                   />
                 </>
@@ -920,7 +1082,8 @@ export default function Home() {
                 <TouchableOpacity
                   style={[
                     styles.modalButtonSave,
-                    (!newGoal.name || !newGoal.type) && styles.modalButtonDisabled,
+                    (!newGoal.name || !newGoal.type) &&
+                      styles.modalButtonDisabled,
                   ]}
                   onPress={handleSaveEditedGoal}
                   disabled={!newGoal.name || !newGoal.type}
@@ -942,7 +1105,7 @@ export default function Home() {
       >
         <View style={styles.productModalOverlay}>
           <View style={styles.productModalContainer}>
-            <ScrollView 
+            <ScrollView
               contentContainerStyle={styles.productModalContent}
               showsVerticalScrollIndicator={false}
             >
@@ -963,162 +1126,195 @@ export default function Home() {
                     </TouchableOpacity>
                   </View>
 
-                {/* Barcode Info */}
-                {selectedProduct.barcode && (
-                  <View style={styles.productInfoCard}>
-                    <View style={styles.productInfoRow}>
-                      <Ionicons name="barcode-outline" size={20} color="#666" />
-                      <Text style={styles.productInfoLabel}>Barcode</Text>
+                  {/* Barcode Info */}
+                  {selectedProduct.barcode && (
+                    <View style={styles.productInfoCard}>
+                      <View style={styles.productInfoRow}>
+                        <Ionicons
+                          name="barcode-outline"
+                          size={20}
+                          color="#666"
+                        />
+                        <Text style={styles.productInfoLabel}>Barcode</Text>
+                      </View>
+                      <Text style={styles.productInfoValue}>
+                        {selectedProduct.barcode}
+                      </Text>
                     </View>
-                    <Text style={styles.productInfoValue}>{selectedProduct.barcode}</Text>
-                  </View>
-                )}
-
-                {/* Nutrition Facts */}
-                <View style={styles.productSection}>
-                  <Text style={styles.productSectionTitle}>Nutrition Facts</Text>
-                  {selectedProduct.servingSize && (
-                    <Text style={styles.productServingSize}>
-                      Per {selectedProduct.servingSize}
-                    </Text>
                   )}
-                  
-                  <View style={styles.nutritionGrid}>
-                    <View style={styles.nutritionItem}>
-                      <Text style={styles.nutritionValue}>
-                        {selectedProduct.calories || "—"}
-                      </Text>
-                      <Text style={styles.nutritionLabel}>Calories</Text>
-                    </View>
-                    
-                    <View style={styles.nutritionItem}>
-                      <Text style={styles.nutritionValue}>
-                        {selectedProduct.protein || "—"}g
-                      </Text>
-                      <Text style={styles.nutritionLabel}>Protein</Text>
-                    </View>
-                    
-                    <View style={styles.nutritionItem}>
-                      <Text style={styles.nutritionValue}>
-                        {selectedProduct.carbs || "—"}g
-                      </Text>
-                      <Text style={styles.nutritionLabel}>Carbs</Text>
-                    </View>
-                    
-                    <View style={styles.nutritionItem}>
-                      <Text style={styles.nutritionValue}>
-                        {selectedProduct.fat || "—"}g
-                      </Text>
-                      <Text style={styles.nutritionLabel}>Fat</Text>
-                    </View>
-                    
-                    {selectedProduct.sugar !== undefined && (
-                      <View style={styles.nutritionItem}>
-                        <Text style={styles.nutritionValue}>
-                          {selectedProduct.sugar}g
-                        </Text>
-                        <Text style={styles.nutritionLabel}>Sugar</Text>
-                      </View>
-                    )}
-                    
-                    {selectedProduct.fiber !== undefined && (
-                      <View style={styles.nutritionItem}>
-                        <Text style={styles.nutritionValue}>
-                          {selectedProduct.fiber}g
-                        </Text>
-                        <Text style={styles.nutritionLabel}>Fiber</Text>
-                      </View>
-                    )}
-                    
-                    {selectedProduct.sodium !== undefined && (
-                      <View style={styles.nutritionItem}>
-                        <Text style={styles.nutritionValue}>
-                          {selectedProduct.sodium}mg
-                        </Text>
-                        <Text style={styles.nutritionLabel}>Sodium</Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
 
-                {/* Ingredients */}
-                {selectedProduct.ingredients && selectedProduct.ingredients.length > 0 && (
+                  {/* Nutrition Facts */}
                   <View style={styles.productSection}>
-                    <Text style={styles.productSectionTitle}>Ingredients</Text>
-                    <View style={styles.ingredientsList}>
-                      {selectedProduct.ingredients.map((ingredient, index) => (
-                        <View key={index} style={styles.ingredientChip}>
-                          <Text style={styles.ingredientText}>{ingredient}</Text>
+                    <Text style={styles.productSectionTitle}>
+                      Nutrition Facts
+                    </Text>
+                    {selectedProduct.servingSize && (
+                      <Text style={styles.productServingSize}>
+                        Per {selectedProduct.servingSize}
+                      </Text>
+                    )}
+
+                    <View style={styles.nutritionGrid}>
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>
+                          {selectedProduct.calories || "—"}
+                        </Text>
+                        <Text style={styles.nutritionLabel}>Calories</Text>
+                      </View>
+
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>
+                          {selectedProduct.protein || "—"}g
+                        </Text>
+                        <Text style={styles.nutritionLabel}>Protein</Text>
+                      </View>
+
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>
+                          {selectedProduct.carbs || "—"}g
+                        </Text>
+                        <Text style={styles.nutritionLabel}>Carbs</Text>
+                      </View>
+
+                      <View style={styles.nutritionItem}>
+                        <Text style={styles.nutritionValue}>
+                          {selectedProduct.fat || "—"}g
+                        </Text>
+                        <Text style={styles.nutritionLabel}>Fat</Text>
+                      </View>
+
+                      {selectedProduct.sugar !== undefined && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionValue}>
+                            {selectedProduct.sugar}g
+                          </Text>
+                          <Text style={styles.nutritionLabel}>Sugar</Text>
                         </View>
-                      ))}
+                      )}
+
+                      {selectedProduct.fiber !== undefined && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionValue}>
+                            {selectedProduct.fiber}g
+                          </Text>
+                          <Text style={styles.nutritionLabel}>Fiber</Text>
+                        </View>
+                      )}
+
+                      {selectedProduct.sodium !== undefined && (
+                        <View style={styles.nutritionItem}>
+                          <Text style={styles.nutritionValue}>
+                            {selectedProduct.sodium}mg
+                          </Text>
+                          <Text style={styles.nutritionLabel}>Sodium</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
-                )}
 
-                {/* Allergen Warning */}
-                {(() => {
-                  const prohibited = userData.profile?.prohibitedIngredients || [];
-                  const allergenMatches = checkForAllergens(
-                    selectedProduct.ingredients || [],
-                    prohibited
-                  );
-                  
-                  if (allergenMatches.length > 0) {
-                    return (
-                      <View style={styles.allergenWarningCard}>
-                        <View style={styles.allergenWarningHeader}>
-                          <Ionicons name="warning" size={24} color="#DC2626" />
-                          <Text style={styles.allergenWarningTitle}>
-                            Allergen Warning
-                          </Text>
+                  {/* Ingredients */}
+                  {selectedProduct.ingredients &&
+                    selectedProduct.ingredients.length > 0 && (
+                      <View style={styles.productSection}>
+                        <Text style={styles.productSectionTitle}>
+                          Ingredients
+                        </Text>
+                        <View style={styles.ingredientsList}>
+                          {selectedProduct.ingredients.map(
+                            (ingredient, index) => (
+                              <View key={index} style={styles.ingredientChip}>
+                                <Text style={styles.ingredientText}>
+                                  {ingredient}
+                                </Text>
+                              </View>
+                            )
+                          )}
                         </View>
-                        {allergenMatches.map((match, index) => (
-                          <View key={index} style={styles.allergenMatch}>
-                            <Text style={styles.allergenName}>
-                              {getSeverityText(match.severity) === "SEVERE" ? "🚨" : 
-                               getSeverityText(match.severity) === "MODERATE" ? "⚠️" : "ℹ️"} {match.prohibitedIngredient}
-                            </Text>
-                            <Text style={styles.allergenFoundIn}>
-                              Found in: {match.foundIn.join(", ")}
+                      </View>
+                    )}
+
+                  {/* Allergen Warning */}
+                  {(() => {
+                    const prohibited =
+                      userData.profile?.prohibitedIngredients || [];
+                    const allergenMatches = checkForAllergens(
+                      selectedProduct.ingredients || [],
+                      prohibited
+                    );
+
+                    if (allergenMatches.length > 0) {
+                      return (
+                        <View style={styles.allergenWarningCard}>
+                          <View style={styles.allergenWarningHeader}>
+                            <Ionicons
+                              name="warning"
+                              size={24}
+                              color="#DC2626"
+                            />
+                            <Text style={styles.allergenWarningTitle}>
+                              Allergen Warning
                             </Text>
                           </View>
-                        ))}
-                        <View style={styles.disclaimerBox}>
-                          <Text style={styles.disclaimerText}>
-                            ⚠️ Always verify ingredients on the physical product label. This information may be incomplete or outdated.
-                          </Text>
+                          {allergenMatches.map((match, index) => (
+                            <View key={index} style={styles.allergenMatch}>
+                              <Text style={styles.allergenName}>
+                                {getSeverityText(match.severity) === "SEVERE"
+                                  ? "🚨"
+                                  : getSeverityText(match.severity) ===
+                                    "MODERATE"
+                                  ? "⚠️"
+                                  : "ℹ️"}{" "}
+                                {match.prohibitedIngredient}
+                              </Text>
+                              <Text style={styles.allergenFoundIn}>
+                                Found in: {match.foundIn.join(", ")}
+                              </Text>
+                            </View>
+                          ))}
+                          <View style={styles.disclaimerBox}>
+                            <Text style={styles.disclaimerText}>
+                              ⚠️ Always verify ingredients on the physical
+                              product label. This information may be incomplete
+                              or outdated.
+                            </Text>
+                          </View>
                         </View>
-                      </View>
-                    );
-                  } else {
-                    return (
-                      <>
-                        <View style={styles.safeCard}>
-                          <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                          <Text style={styles.safeText}>
-                            No allergens detected based on your profile
-                          </Text>
-                        </View>
-                        <View style={styles.disclaimerBox}>
-                          <Text style={styles.disclaimerText}>
-                            ⚠️ Always verify ingredients on the physical product label. This information may be incomplete or outdated.
-                          </Text>
-                        </View>
-                      </>
-                    );
-                  }
-                })()}
+                      );
+                    } else {
+                      return (
+                        <>
+                          <View style={styles.safeCard}>
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={24}
+                              color="#10B981"
+                            />
+                            <Text style={styles.safeText}>
+                              No allergens detected based on your profile
+                            </Text>
+                          </View>
+                          <View style={styles.disclaimerBox}>
+                            <Text style={styles.disclaimerText}>
+                              ⚠️ Always verify ingredients on the physical
+                              product label. This information may be incomplete
+                              or outdated.
+                            </Text>
+                          </View>
+                        </>
+                      );
+                    }
+                  })()}
 
-                {/* Close Button */}
-                <TouchableOpacity
-                  style={styles.productModalButton}
-                  onPress={() => setShowProductDetailsModal(false)}
-                >
-                  <Text style={styles.productModalButtonText}>Close</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </ScrollView>
+                  {/* Close Button */}
+                  <TouchableOpacity
+                    style={styles.productModalButton}
+                    onPress={() => setShowProductDetailsModal(false)}
+                  >
+                    <Text style={styles.productModalButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1141,19 +1337,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E5E7EB",
   },
-  brandRow: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    gap: 10 
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-  brandTitle: { 
-    fontSize: 18, 
-    fontWeight: "700", 
-    color: "#111827" 
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
   },
-  brandSubtitle: { 
-    fontSize: 12, 
-    color: "#6B7280" 
+  brandSubtitle: {
+    fontSize: 12,
+    color: "#6B7280",
   },
   profileButton: {
     padding: 4,
@@ -1193,8 +1389,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  scrollContent: { 
-    padding: 16, 
+  scrollContent: {
+    padding: 16,
     paddingBottom: 32,
   },
   welcomeCard: {
@@ -1371,31 +1567,31 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: "#E5E7EB",
   },
   goalProgressHeader: {
     marginBottom: 8,
   },
   goalProgressValue: {
     fontSize: 14,
-    color: '#333',
-    fontWeight: '600',
+    color: "#333",
+    fontWeight: "600",
   },
   goalProgressBarContainer: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 6,
   },
   goalProgressBar: {
-    height: '100%',
+    height: "100%",
     borderRadius: 4,
   },
   goalProgressText: {
     fontSize: 12,
-    color: '#666',
-    textAlign: 'right',
+    color: "#666",
+    textAlign: "right",
   },
   emptyGoals: {
     padding: 32,
@@ -1411,8 +1607,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
   },
-  actionsColumn: { 
-    gap: 12, 
+  actionsColumn: {
+    gap: 12,
     marginBottom: 16,
   },
   modalOverlay: {
@@ -1425,7 +1621,7 @@ const styles = StyleSheet.create({
   modalScrollContent: {
     flexGrow: 1,
     justifyContent: "center",
-    alignItems: "center", 
+    alignItems: "center",
   },
   modalContent: {
     backgroundColor: "#fff",
@@ -1534,15 +1730,15 @@ const styles = StyleSheet.create({
   // Product Details Modal Styles
   productModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    justifyContent: "flex-end",
   },
   productModalContainer: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '90%',
-    shadowColor: '#000',
+    maxHeight: "90%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1559,7 +1755,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 16,
     borderBottomWidth: 2,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
   },
   productModalTitleContainer: {
     flex: 1,
@@ -1613,7 +1809,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 8,
     borderBottomWidth: 2,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
   },
   productServingSize: {
     fontSize: 14,
@@ -1725,7 +1921,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    borderTopColor: "rgba(0, 0, 0, 0.1)",
   },
   disclaimerText: {
     fontSize: 12,
