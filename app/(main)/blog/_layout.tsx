@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 
 export default function BlogLayout() {
   return (
-    <Stack screenOptions={{ headerBackTitle: "Feed" }}>
+    <Stack screenOptions={{ headerBackTitle: "Feed", headerShown: false }}>
       <Stack.Screen name="index" options={{ title: "Feed" }} />
 
       <Stack.Screen name="post/[postId]" options={{ title: "Article" }} />

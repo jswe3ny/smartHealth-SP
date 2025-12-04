@@ -78,6 +78,7 @@ export default function AppLayout() {
           options={{
             title: "Blog",
             tabBarLabel: "Blog",
+            headerShown: false,
             tabBarIcon: ({ color }) => (
               <Ionicons name="newspaper" size={24} color={color} />
             ),
