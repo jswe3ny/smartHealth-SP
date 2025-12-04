@@ -1636,7 +1636,7 @@ const styles = StyleSheet.create({
   modalLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#666",
+    color: "#000",
     marginBottom: 8,
     marginTop: 8,
   },
@@ -1677,7 +1677,7 @@ const styles = StyleSheet.create({
     borderColor: "#007AFF",
   },
   goalTypeButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   goalTypeButtonText: {
     fontSize: 13,
@@ -1690,7 +1690,7 @@ const styles = StyleSheet.create({
   },
   targetHint: {
     fontSize: 12,
-    color: "#999",
+    color: "#000",
     fontStyle: "italic",
     marginBottom: 8,
   },
