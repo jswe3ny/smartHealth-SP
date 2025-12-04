@@ -8,6 +8,7 @@ export interface MealInsertType {
   mealType: "breakfast" | "lunch" | "dinner" | "snack";
   mealTime: Timestamp;
   mealName?: string;
+  totalCalories?: number;
 }
 export interface FoodItem {
   tempClientId?: number; // only used for client side keys
@@ -41,6 +42,9 @@ export interface ProductData {
 export interface MealSummary {
   id: string;
   mealName?: string;
+  mealTime: Timestamp;      
+  totalCalories: number;    
+  mealType: string;         
 }
 
 export interface MealDetails extends MealInsertType {

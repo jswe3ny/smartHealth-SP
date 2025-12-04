@@ -1,21 +1,22 @@
 import { colors } from "@/assets/styles";
 import { Button } from "@/components/button";
 import { useAuth } from "@/contexts/authContext";
-import { getDocWithId, upsert } from "@/utils/firestore-helpers";
+import { useUserInfo } from "@/hooks/useUserInfo";
 import {
-  getActiveHealthGoals,
   getLastMonthHealthData,
   getLastWeekHealthData,
   saveDailyHealthData,
-  saveHealthGoal,
 } from "@/utils/health.repo";
 import { HealthData, healthService } from "@/utils/health.service";
-import { DailyHealthData, HealthGoal } from "@/utils/types/health.types";
+import { DailyHealthData } from "@/utils/types/health.types";
+import { Goal } from "@/utils/types/user.types";
+import { deleteGoal, updateUserInfo } from "@/utils/user.repo";
 import { Timestamp } from "@react-native-firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Modal,
   Platform,
   RefreshControl,
@@ -26,14 +27,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LineChart } from "react-native-chart-kit";
+
+// const userData = useUserInfo();
 
 // Helper functions for metrics
 const calculateBMI = (weightLbs: number, heightInches: number): number => {
   return (weightLbs / (heightInches * heightInches)) * 703;
 };
 
-// BMI calculation 
-const calculateWeeklyStreak = (weekData: DailyHealthData[], stepGoal: number): number => {
+const calculateWeeklyStreak = (
+  weekData: DailyHealthData[],
+  stepGoal: number
+): number => {
   let streak = 0;
   for (let i = weekData.length - 1; i >= 0; i--) {
     if (weekData[i].steps >= stepGoal) {
@@ -48,25 +54,29 @@ const calculateWeeklyStreak = (weekData: DailyHealthData[], stepGoal: number): n
 const getTotalMonthlyDistance = (monthData: DailyHealthData[]): number => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
-  
+
   return monthData
-    .filter(day => {
+    .filter((day) => {
       const date = day.date.toDate();
-      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+      return (
+        date.getMonth() === currentMonth && date.getFullYear() === currentYear
+      );
     })
     .reduce((total, day) => total + day.distance, 0);
 };
 
-const getMostActiveDay = (weekData: DailyHealthData[]): { day: string; steps: number } | null => {
+const getMostActiveDay = (
+  weekData: DailyHealthData[]
+): { day: string; steps: number } | null => {
   if (weekData.length === 0) return null;
-  
-  const mostActive = weekData.reduce((max, current) => 
+
+  const mostActive = weekData.reduce((max, current) =>
     current.steps > max.steps ? current : max
   );
-  
+
   const date = mostActive.date.toDate();
   const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
-  
+
   return { day: dayName, steps: mostActive.steps };
 };
 
@@ -76,31 +86,36 @@ const getAverageDailySteps = (data: DailyHealthData[]): number => {
   return Math.round(total / data.length);
 };
 
-const calculateGoalStreaks = (weekData: DailyHealthData[], goals: HealthGoal[]) => {
+const calculateGoalStreaks = (weekData: DailyHealthData[], goals: Goal[]) => {
   const streaks: { [key: string]: number } = {};
-  
-  goals.forEach(goal => {
+
+  goals.forEach((goal) => {
+    if (!goal.type) return;
+
     let streak = 0;
     for (let i = weekData.length - 1; i >= 0; i--) {
-      const dayValue = goal.type === 'steps' ? weekData[i].steps : 
-                       goal.type === 'distance' ? weekData[i].distance : 
-                       weekData[i].calories;
-      if (dayValue >= goal.targetValue) streak++;
+      const dayValue =
+        goal.type === "steps"
+          ? weekData[i].steps
+          : goal.type === "distance"
+          ? weekData[i].distance
+          : weekData[i].calories;
+      if (goal.targetValue && dayValue >= goal.targetValue) streak++;
       else break;
     }
     streaks[goal.type] = streak;
   });
-  
+
   return streaks;
 };
 
-
 export default function HealthTracking() {
   const { currentUser } = useAuth();
+  const { profile } = useUserInfo();
   const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [weekData, setWeekData] = useState<DailyHealthData[]>([]);
   const [monthData, setMonthData] = useState<DailyHealthData[]>([]);
-  const [goals, setGoals] = useState<HealthGoal[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isAvailable, setIsAvailable] = useState(false);
@@ -112,13 +127,9 @@ export default function HealthTracking() {
 
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
 
-  const [userHeight, setUserHeight] = useState<number>(70); // inches ex.(5'10")
   const [weightGoal, setWeightGoal] = useState<number | null>(155); // goal weight
   const [showWeightGoalModal, setShowWeightGoalModal] = useState(false);
   const [tempWeightGoal, setTempWeightGoal] = useState("");
-  const [showHeightModal, setShowHeightModal] = useState(false);
-  const [tempHeightFeet, setTempHeightFeet] = useState("");
-  const [tempHeightInches, setTempHeightInches] = useState("");
 
   useEffect(() => {
     checkAvailability();
@@ -129,6 +140,27 @@ export default function HealthTracking() {
       loadData();
     }
   }, [isAvailable]);
+
+  // Update goals when profile changes
+  useEffect(() => {
+    if (profile?.currentGoals) {
+      // Filter for health goals
+      const healthGoals = profile.currentGoals.filter(
+        (g) =>
+          g.type === "steps" ||
+          g.type === "distance" ||
+          g.type === "calories" ||
+          g.type === "weight"
+      );
+      setGoals(healthGoals);
+
+      // Update weight goal if exists
+      const weightGoalData = healthGoals.find((g) => g.type === "weight");
+      if (weightGoalData && weightGoalData.targetValue) {
+        setWeightGoal(weightGoalData.targetValue);
+      }
+    }
+  }, [profile]);
 
   const checkAvailability = async () => {
     const available = await healthService.isAvailable();
@@ -172,28 +204,6 @@ export default function HealthTracking() {
 
         const monthlyData = await getLastMonthHealthData(currentUser.uid);
         setMonthData(monthlyData);
-
-        const userGoals = await getActiveHealthGoals(currentUser.uid);
-        setGoals(userGoals);
-
-        // Load weight goal from healthGoals
-        const weightGoalData = userGoals.find(g => g.type === "weight");
-        if (weightGoalData) {
-          setWeightGoal(weightGoalData.targetValue);
-        }
-
-        // Load user height from profile
-        try {
-          const profilePath = `user/${currentUser.uid}/profile/settings`;
-          const profileDoc = await getDocWithId<{ height: number }>(profilePath);
-  
-          if (profileDoc?.data?.height) {
-            setUserHeight(profileDoc.data.height);
-          }
-        } catch (error) {
-          console.error("Error loading height:", error);
-        }
-
       }
     } catch (error) {
       console.error("Error loading health data:", error);
@@ -223,26 +233,38 @@ export default function HealthTracking() {
     try {
       if (editingGoalId) {
         // Update existing goal
-        const goalPath = `user/${currentUser.uid}/healthGoals/${editingGoalId}`;
-        await upsert(goalPath, {
-          targetValue: parseFloat(newGoal.targetValue),
-        });
+        const updatedGoals =
+          profile?.currentGoals?.map((g) =>
+            g.goalId === editingGoalId
+              ? { ...g, targetValue: parseFloat(newGoal.targetValue) }
+              : g
+          ) || [];
+
+        await updateUserInfo(currentUser.uid, { currentGoals: updatedGoals });
+
         setEditingGoalId(null);
         Alert.alert("Success", "Goal updated successfully!");
       } else {
         // Add new goal
-        await saveHealthGoal(currentUser.uid, {
+        const goalData: Goal = {
+          name: `${
+            newGoal.type.charAt(0).toUpperCase() + newGoal.type.slice(1)
+          } Goal`,
+          description: `Daily ${newGoal.type} target`,
           type: newGoal.type,
           targetValue: parseFloat(newGoal.targetValue),
-          isActive: true,
-        });
+          endDate: Timestamp.fromDate(
+            new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          ), // 1 year from now
+          startDate: Timestamp.now(),
+        };
+
+        await updateUserInfo(currentUser.uid, { goal: goalData });
         Alert.alert("Success", "Goal added successfully!");
       }
 
       setShowGoalModal(false);
       setNewGoal({ type: "steps", targetValue: "" });
-      await loadData();
-      Alert.alert("Success", "Goal added successfully!");
     } catch (error) {
       console.error("Error adding goal:", error);
       Alert.alert("Error", "Failed to add goal");
@@ -262,26 +284,36 @@ export default function HealthTracking() {
     }
 
     try {
-      const existingWeightGoal = goals.find(g => g.type === "weight");
-      
+      const existingWeightGoal = profile?.currentGoals?.find(
+        (g) => g.type === "weight"
+      );
+
       if (existingWeightGoal) {
-        const goalPath = `user/${currentUser.uid}/healthGoals/${existingWeightGoal.goalId}`;
-        await upsert(goalPath, {
-          targetValue: goal,
-          isActive: true,
-        });
+        const updatedGoals =
+          profile?.currentGoals?.map((g) =>
+            g.type === "weight" ? { ...g, targetValue: goal } : g
+          ) || [];
+
+        await updateUserInfo(currentUser.uid, { currentGoals: updatedGoals });
       } else {
-        await saveHealthGoal(currentUser.uid, {
+        const goalData: Goal = {
+          name: "Weight Goal",
+          description: `Target weight: ${goal} lbs`,
           type: "weight",
           targetValue: goal,
-          isActive: true,
-        });
+          endDate: Timestamp.fromDate(
+            new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          ),
+          startDate: Timestamp.now(),
+        };
+
+        await updateUserInfo(currentUser.uid, { goal: goalData });
       }
 
       setWeightGoal(goal);
       setShowWeightGoalModal(false);
       setTempWeightGoal("");
-      await loadData(); 
+      await loadData();
       Alert.alert("Success", "Weight goal updated!");
     } catch (error) {
       console.error("Error saving weight goal:", error);
@@ -289,44 +321,11 @@ export default function HealthTracking() {
     }
   };
 
-  const handleSetHeight = async () => {
-    if (!currentUser || !tempHeightFeet) {
-      Alert.alert("Error", "Please enter your height");
-      return;
-    }
-
-    const feet = parseInt(tempHeightFeet);
-    const inches = tempHeightInches ? parseInt(tempHeightInches) : 0;
-  
-    if (isNaN(feet) || feet <= 0 || isNaN(inches) || inches < 0 || inches >= 12) {
-      Alert.alert("Error", "Please enter a valid height");
-      return;
-    }
-
-    const totalInches = (feet * 12) + inches;
-
-    try {
-      const profilePath = `user/${currentUser.uid}/profile/settings`;
-      await upsert(profilePath, {
-        height: totalInches,
-      });
-
-      setUserHeight(totalInches);
-      setShowHeightModal(false);
-      setTempHeightFeet("");
-      setTempHeightInches("");
-      Alert.alert("Success", "Height updated!");
-    } catch (error) {
-      console.error("Error saving height:", error);
-      Alert.alert("Error", "Failed to save height");
-      }
-    };
-
-  const handleEditGoal = (goal: HealthGoal) => {
-    setEditingGoalId(goal.goalId);
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoalId(goal.goalId || null);
     setNewGoal({
-      type: goal.type as "steps" | "distance" | "calories",
-      targetValue: goal.targetValue.toString(),
+      type: goal.type as "steps" | "distance" | "calories" | "weight",
+      targetValue: goal.targetValue?.toString() || "",
     });
     setShowGoalModal(true);
   };
@@ -334,32 +333,26 @@ export default function HealthTracking() {
   const handleDeleteGoal = async (goalId: string, goalType: string) => {
     if (!currentUser) return;
 
-    Alert.alert(
-      "Delete Goal",
-      "Are you sure you want to delete this goal?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const goalPath = `user/${currentUser.uid}/healthGoals/${goalId}`;
-              await upsert(goalPath, { isActive: false });
-              await loadData();
-              Alert.alert("Success", "Goal deleted!");
-            } catch (error) {
-              console.error("Error deleting goal:", error);
-              Alert.alert("Error", "Failed to delete goal");
-            }
-          },
+    Alert.alert("Delete Goal", "Are you sure you want to delete this goal?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteGoal(currentUser.uid, "currentGoals", "goalId", goalId);
+            Alert.alert("Success", "Goal deleted!");
+          } catch (error) {
+            console.error("Error deleting goal:", error);
+            Alert.alert("Error", "Failed to delete goal");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  const calculateProgress = (goal: HealthGoal): number => {
-    if (!healthData) return 0;
+  const calculateProgress = (goal: Goal): number => {
+    if (!healthData || !goal.targetValue) return 0;
 
     let currentValue = 0;
     switch (goal.type) {
@@ -414,6 +407,32 @@ export default function HealthTracking() {
     };
   };
 
+  // Helper to prepare chart data from week data
+  const prepareChartData = () => {
+    if (weekData.length === 0) {
+      return {
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        datasets: [{ data: [0, 0, 0, 0, 0, 0, 0] }],
+      };
+    }
+
+    const sortedData = [...weekData].sort(
+      (a, b) => a.date.toDate().getTime() - b.date.toDate().getTime()
+    );
+
+    const labels = sortedData.map((day) => {
+      const date = day.date.toDate();
+      return date.toLocaleDateString("en-US", { weekday: "short" });
+    });
+
+    const stepsData = sortedData.map((day) => day.steps);
+
+    return {
+      labels,
+      datasets: [{ data: stepsData }],
+    };
+  };
+
   if (!currentUser) return null;
 
   if (loading) {
@@ -441,13 +460,22 @@ export default function HealthTracking() {
   }
 
   const weeklyAvg = calculateWeeklyAverage();
-  const stepGoal = goals.find(g => g.type === "steps")?.targetValue || 10000;
-  const currentBMI = healthData?.weight ? calculateBMI(healthData.weight, userHeight) : null;
+  const stepGoal = goals.find((g) => g.type === "steps")?.targetValue || 10000;
+  const currentBMI =
+    healthData?.weight && profile?.height
+      ? calculateBMI(healthData.weight, profile.height)
+      : null;
   const weeklyStreak = calculateWeeklyStreak(weekData, stepGoal);
   const monthlyDistance = getTotalMonthlyDistance(monthData);
   const mostActiveDay = getMostActiveDay(weekData);
   const avgDailySteps = getAverageDailySteps(monthData);
-  const goalStreaks = calculateGoalStreaks(weekData, goals.filter(g => g.type !== "weight"));
+  const goalStreaks = calculateGoalStreaks(
+    weekData,
+    goals.filter((g) => g.type !== "weight")
+  );
+  const chartData = prepareChartData();
+  const screenWidth = Dimensions.get("window").width;
+  const currentGoalCount = profile?.currentGoals?.length || 0;
 
   return (
     <ScrollView
@@ -492,23 +520,56 @@ export default function HealthTracking() {
             </Text>
             <Text style={styles.statLabel}>Calories burned</Text>
           </View>
-
         </View>
       </View>
+
+      {/* Weekly Steps Chart */}
+      {weekData.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>7-Day Steps Activity</Text>
+          <View style={styles.chartContainer}>
+            <LineChart
+              data={chartData}
+              width={screenWidth - 48}
+              height={220}
+              chartConfig={{
+                backgroundColor: "#ffffff",
+                backgroundGradientFrom: "#ffffff",
+                backgroundGradientTo: "#ffffff",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                style: {
+                  borderRadius: 16,
+                },
+                propsForDots: {
+                  r: "6",
+                  strokeWidth: "2",
+                  stroke: "#007AFF",
+                },
+              }}
+              bezier
+              style={styles.chart}
+            />
+          </View>
+        </View>
+      )}
 
       {/* Weight Goal Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Weight Goal</Text>
-        
+
         {healthData?.weight && weightGoal ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.weightGoalCard}
             onLongPress={() => setShowWeightGoalModal(true)}
           >
             <View style={styles.weightGoalContent}>
               <View style={styles.weightGoalLeft}>
                 <Text style={styles.weightGoalLabel}>Current Weight</Text>
-                <Text style={styles.weightGoalValue}>{healthData.weight.toFixed(1)} lbs</Text>
+                <Text style={styles.weightGoalValue}>
+                  {healthData.weight.toFixed(1)} lbs
+                </Text>
               </View>
               <View style={styles.weightGoalArrow}>
                 <Text style={styles.weightGoalArrowText}>→</Text>
@@ -520,244 +581,195 @@ export default function HealthTracking() {
             </View>
             <View style={styles.weightGoalProgress}>
               <Text style={styles.weightGoalRemaining}>
-                {Math.abs(healthData.weight - weightGoal).toFixed(1)} lbs to {healthData.weight > weightGoal ? "lose" : "gain"}
+                {Math.abs(healthData.weight - weightGoal).toFixed(1)} lbs to{" "}
+                {healthData.weight > weightGoal ? "lose" : "gain"}
               </Text>
             </View>
             <Text style={styles.goalHint}>💡 Long press to edit</Text>
           </TouchableOpacity>
         ) : healthData?.weight && !weightGoal ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.weightGoalCardEmpty}
             onPress={() => setShowWeightGoalModal(true)}
           >
-            <Text style={styles.weightGoalEmptyText}>Set a weight goal to track your progress</Text>
+            <Text style={styles.weightGoalEmptyText}>
+              Set a weight goal to track your progress
+            </Text>
             <Text style={styles.weightGoalEmptyButton}>+ Set Weight Goal</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={styles.emptyText}>Sync health data to set a weight goal</Text>
+          <Text style={styles.emptyText}>
+            Sync health data to set a weight goal
+          </Text>
         )}
-      </View>
-
-      {/* Height Setting Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Height</Text>
-  
-        <TouchableOpacity 
-          style={styles.heightCard}
-          onLongPress={() => {
-            const feet = Math.floor(userHeight / 12);
-            const inches = userHeight % 12;
-            setTempHeightFeet(feet.toString());
-            setTempHeightInches(inches.toString());
-            setShowHeightModal(true);
-          }}
-        >
-          <Text style={styles.heightValue}>
-            {Math.floor(userHeight / 12)}&apos; {userHeight % 12}&quot;
-          </Text>
-          <Text style={styles.heightLabel}>
-            ({userHeight} inches total)
-          </Text>
-          <Text style={styles.goalHint}>💡 Long press to edit</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Daily Goals Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>My Goals</Text>
-            <Text style={styles.sectionSubtitle}>
-              Track your progress today
+          <Text style={styles.sectionTitle}>My Health Goals</Text>
+          <Text style={styles.goalSubtitle}>Manage goals from Home page</Text>
+        </View>
+        {goals.length === 0 ? (
+          <View style={styles.emptyGoalsCard}>
+            <Text style={styles.emptyGoalsText}>No health goals set yet</Text>
+            <Text style={styles.emptyGoalsSubtext}>
+              Go to Home page to add health goals
             </Text>
           </View>
-          <TouchableOpacity onPress={() => {
-            // Prevents adding duplicate goal types
-            const existingTypes = goals.filter(g => g.type !== "weight").map(g => g.type);
-            if (existingTypes.length >= 3) {
-              Alert.alert("Maximum Goals", "You can only have one goal of each type (Steps, Distance, Calories)");
-              return;
-            }
-            setShowGoalModal(true);
-          }}>
-            <Text style={styles.addButton}>+ Add Goal</Text>
-          </TouchableOpacity>
-        </View>
-
-        {goals.filter(g => g.type !== "weight").length === 0 ? (
-          <Text style={styles.emptyText}>
-            No goals set. Tap &quot;Add Goal&quot; to create one!
-          </Text>
         ) : (
           <View style={styles.goalsContainer}>
-            {goals.filter(g => g.type === "steps").map((goal) => {
-              const progress = calculateProgress(goal);
-              
-              return (
-                <TouchableOpacity 
-                  key={goal.goalId}
-                  style={styles.barGoalCard}
-                  onLongPress={() => {
-                    Alert.alert(
-                      "Manage Goal",
-                      "What would you like to do?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Edit", onPress: () => handleEditGoal(goal) },
-                        { text: "Delete", style: "destructive", onPress: () => handleDeleteGoal(goal.goalId, goal.type) },
-                      ]
-                    );
-                  }}
-                >
-                  <View style={styles.barGoalHeader}>
-                    <Text style={styles.barGoalType}>Steps</Text>
-                    <Text style={[
-                      styles.barGoalValue,
-                      { color: progress >= 100 ? '#4CAF50' : '#007AFF'}]}>
-                      {healthData?.steps.toLocaleString() || "0"} / {goal.targetValue.toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={styles.progressBarContainer}>
-                    <View
-                      style={[
-                        styles.progressBar, 
-                        { 
-                          width: `${Math.min(progress, 100)}%`,
-                          backgroundColor: progress >= 100 ? '#4CAF50' : '#007AFF',
-                        }
-                      ]}
-                    />
-                  </View>
-                  <View style={styles.barGoalFooter}>
-                    <Text style={styles.progressText}>
-                      {progress.toFixed(0)}% Complete
-                    </Text>
-                    {progress >= 100 && (
-                      <Text style={styles.goalAchieved}>✓ Achieved!</Text>
+            {goals
+              .filter((g) => g.type === "steps")
+              .map((goal) => {
+                const progress = calculateProgress(goal);
+
+                return (
+                  <View key={goal.goalId} style={styles.barGoalCard}>
+                    <View style={styles.barGoalHeader}>
+                      <Text style={styles.barGoalType}>Steps</Text>
+                      <Text
+                        style={[
+                          styles.barGoalValue,
+                          { color: progress >= 100 ? "#4CAF50" : "#007AFF" },
+                        ]}
+                      >
+                        {healthData?.steps.toLocaleString() || "0"} /{" "}
+                        {goal.targetValue?.toLocaleString() || "0"}
+                      </Text>
+                    </View>
+                    <View style={styles.progressBarContainer}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          {
+                            width: `${Math.min(progress, 100)}%`,
+                            backgroundColor:
+                              progress >= 100 ? "#4CAF50" : "#007AFF",
+                          },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.barGoalFooter}>
+                      <Text style={styles.progressText}>
+                        {progress.toFixed(0)}% Complete
+                      </Text>
+                      {progress >= 100 && (
+                        <Text style={styles.goalAchieved}>✓ Achieved!</Text>
+                      )}
+                    </View>
+                    {goalStreaks.steps > 0 && (
+                      <Text style={styles.streakBadge}>
+                        🔥 {goalStreaks.steps} day streak
+                      </Text>
                     )}
                   </View>
-                  {goalStreaks.steps > 0 && (
-                    <Text style={styles.streakBadge}>🔥 {goalStreaks.steps} day streak</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-            {goals.filter(g => g.type === "distance").map((goal) => {
-              const progress = calculateProgress(goal);
-              
-              return (
-                <TouchableOpacity 
-                  key={goal.goalId}
-                  style={styles.barGoalCard}
-                  onLongPress={() => {
-                    Alert.alert(
-                      "Manage Goal",
-                      "What would you like to do?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Edit", onPress: () => handleEditGoal(goal) },
-                        { text: "Delete", style: "destructive", onPress: () => handleDeleteGoal(goal.goalId, goal.type) },
-                      ]
-                    );
-                  }}
-                >
-                  <View style={styles.barGoalHeader}>
-                    <Text style={styles.barGoalType}>Distance</Text>
-                    <Text style={[
-                      styles.barGoalValue,
-                      { color: progress >= 100 ? '#4CAF50' : '#007AFF'}]}>
-                      {healthData ? healthData.distance.toFixed(1) : "0.0"} / {goal.targetValue} mi
-                    </Text>
-                  </View>
-                  <View style={styles.progressBarContainer}>
-                    <View
-                      style={[
-                        styles.progressBar, 
-                        { 
-                          width: `${Math.min(progress, 100)}%`,
-                          backgroundColor: progress >= 100 ? '#4CAF50' : '#FF9800',
-                        }
-                      ]}
-                    />
-                  </View>
-                  <View style={styles.barGoalFooter}>
-                    <Text style={styles.progressText}>
-                      {progress.toFixed(0)}% Complete
-                    </Text>
-                    {progress >= 100 && (
-                      <Text style={styles.goalAchieved}>✓ Achieved!</Text>
+                );
+              })}
+            {goals
+              .filter((g) => g.type === "distance")
+              .map((goal) => {
+                const progress = calculateProgress(goal);
+
+                return (
+                  <View key={goal.goalId} style={styles.barGoalCard}>
+                    <View style={styles.barGoalHeader}>
+                      <Text style={styles.barGoalType}>Distance</Text>
+                      <Text
+                        style={[
+                          styles.barGoalValue,
+                          { color: progress >= 100 ? "#4CAF50" : "#007AFF" },
+                        ]}
+                      >
+                        {healthData ? healthData.distance.toFixed(1) : "0.0"} /{" "}
+                        {goal.targetValue} mi
+                      </Text>
+                    </View>
+                    <View style={styles.progressBarContainer}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          {
+                            width: `${Math.min(progress, 100)}%`,
+                            backgroundColor:
+                              progress >= 100 ? "#4CAF50" : "#FF9800",
+                          },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.barGoalFooter}>
+                      <Text style={styles.progressText}>
+                        {progress.toFixed(0)}% Complete
+                      </Text>
+                      {progress >= 100 && (
+                        <Text style={styles.goalAchieved}>✓ Achieved!</Text>
+                      )}
+                    </View>
+                    {goalStreaks.steps > 0 && (
+                      <Text style={styles.streakBadge}>
+                        🔥 {goalStreaks.steps} day streak
+                      </Text>
                     )}
                   </View>
-                  {goalStreaks.steps > 0 && (
-                    <Text style={styles.streakBadge}>🔥 {goalStreaks.steps} day streak</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+                );
+              })}
 
             {/* Calories Goal - Bar */}
-            {goals.filter(g => g.type === "calories").map((goal) => {
-              const progress = calculateProgress(goal);
-              
-              return (
-                <TouchableOpacity 
-                  key={goal.goalId}
-                  style={styles.barGoalCard}
-                  onLongPress={() => {
-                    Alert.alert(
-                      "Manage Goal",
-                      "What would you like to do?",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        { text: "Edit", onPress: () => handleEditGoal(goal) },
-                        { text: "Delete", style: "destructive", onPress: () => handleDeleteGoal(goal.goalId, goal.type) },
-                      ]
-                    );
-                  }}
-                >
-                  <View style={styles.barGoalHeader}>
-                    <Text style={styles.barGoalType}>Calories Burned</Text>
-                    <Text style={[
-                      styles.barGoalValue,
-                      { color: progress >= 100 ? '#4CAF50' : '#007AFF'}]}>
-                      {healthData?.calories.toLocaleString() || "0"} / {goal.targetValue.toLocaleString()}
-                    </Text>
-                  </View>
-                  <View style={styles.progressBarContainer}>
-                    <View
-                      style={[
-                        styles.progressBar, 
-                        { 
-                          width: `${Math.min(progress, 100)}%`,
-                          backgroundColor: progress >= 100 ? '#4CAF50' : '#FF5722',
-                        }
-                      ]}
-                    />
-                  </View>
-                  <View style={styles.barGoalFooter}>
-                    <Text style={styles.progressText}>
-                      {progress.toFixed(0)}% Complete
-                    </Text>
-                    {progress >= 100 && (
-                      <Text style={styles.goalAchieved}>✓ Achieved!</Text>
+            {goals
+              .filter((g) => g.type === "calories")
+              .map((goal) => {
+                const progress = calculateProgress(goal);
+
+                return (
+                  <View key={goal.goalId} style={styles.barGoalCard}>
+                    <View style={styles.barGoalHeader}>
+                      <Text style={styles.barGoalType}>Calories Burned</Text>
+                      <Text
+                        style={[
+                          styles.barGoalValue,
+                          { color: progress >= 100 ? "#4CAF50" : "#007AFF" },
+                        ]}
+                      >
+                        {healthData?.calories.toLocaleString() || "0"} /{" "}
+                        {goal.targetValue?.toLocaleString() || "0"}
+                      </Text>
+                    </View>
+                    <View style={styles.progressBarContainer}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          {
+                            width: `${Math.min(progress, 100)}%`,
+                            backgroundColor:
+                              progress >= 100 ? "#4CAF50" : "#FF5722",
+                          },
+                        ]}
+                      />
+                    </View>
+                    <View style={styles.barGoalFooter}>
+                      <Text style={styles.progressText}>
+                        {progress.toFixed(0)}% Complete
+                      </Text>
+                      {progress >= 100 && (
+                        <Text style={styles.goalAchieved}>✓ Achieved!</Text>
+                      )}
+                    </View>
+                    {goalStreaks.steps > 0 && (
+                      <Text style={styles.streakBadge}>
+                        🔥 {goalStreaks.steps} day streak
+                      </Text>
                     )}
                   </View>
-                  {goalStreaks.steps > 0 && (
-                    <Text style={styles.streakBadge}>🔥 {goalStreaks.steps} day streak</Text>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+                );
+              })}
           </View>
         )}
-        
-        <Text style={styles.goalHint}>💡 Long press any goal to edit or delete</Text>
       </View>
 
       {/* Health Metrics */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Health Insights</Text>
-        
+
         <View style={styles.insightsGrid}>
           {/* BMI */}
           {currentBMI && (
@@ -768,17 +780,21 @@ export default function HealthTracking() {
             </View>
           )}
           {/* 7-Day Average Calories */}
-            <View style={styles.insightCard}>
-              <Text style={styles.insightLabel}>7-Day Avg</Text>
-              <Text style={styles.insightValue}>{weeklyAvg.calories.toLocaleString()}</Text>
-              <Text style={styles.insightCategory}>cal burned per day</Text>
-            </View>
+          <View style={styles.insightCard}>
+            <Text style={styles.insightLabel}>7-Day Avg</Text>
+            <Text style={styles.insightValue}>
+              {weeklyAvg.calories.toLocaleString()}
+            </Text>
+            <Text style={styles.insightCategory}>cal burned per day</Text>
+          </View>
 
           {/* Weekly Total Steps */}
           <View style={styles.insightCard}>
-              <Text style={styles.insightLabel}>Week Total</Text>
-              <Text style={styles.insightValue}>
-                {weekData.reduce((sum, day) => sum + day.steps, 0).toLocaleString()}
+            <Text style={styles.insightLabel}>Week Total</Text>
+            <Text style={styles.insightValue}>
+              {weekData
+                .reduce((sum, day) => sum + day.steps, 0)
+                .toLocaleString()}
             </Text>
             <Text style={styles.insightCategory}>steps this week</Text>
           </View>
@@ -797,28 +813,36 @@ export default function HealthTracking() {
           {/* 7-Day Average Steps */}
           <View style={styles.insightCard}>
             <Text style={styles.insightLabel}>7-Day Avg</Text>
-            <Text style={styles.insightValue}>{weeklyAvg.steps.toLocaleString()}</Text>
+            <Text style={styles.insightValue}>
+              {weeklyAvg.steps.toLocaleString()}
+            </Text>
             <Text style={styles.insightCategory}>steps per day</Text>
           </View>
 
           {/* 7-Day Average Distance */}
           <View style={styles.insightCard}>
             <Text style={styles.insightLabel}>7-Day Avg</Text>
-            <Text style={styles.insightValue}>{weeklyAvg.distance.toLocaleString()}</Text>
+            <Text style={styles.insightValue}>
+              {weeklyAvg.distance.toLocaleString()}
+            </Text>
             <Text style={styles.insightCategory}>miles per day</Text>
           </View>
 
           {/* Monthly Distance */}
           <View style={styles.insightCard}>
             <Text style={styles.insightLabel}>Month Distance</Text>
-            <Text style={styles.insightValue}>{monthlyDistance.toFixed(1)}</Text>
+            <Text style={styles.insightValue}>
+              {monthlyDistance.toFixed(1)}
+            </Text>
             <Text style={styles.insightCategory}>miles this month</Text>
           </View>
 
           {/* Average Daily Steps */}
           <View style={styles.insightCard}>
             <Text style={styles.insightLabel}>30-Day Avg</Text>
-            <Text style={styles.insightValue}>{avgDailySteps.toLocaleString()}</Text>
+            <Text style={styles.insightValue}>
+              {avgDailySteps.toLocaleString()}
+            </Text>
             <Text style={styles.insightCategory}>steps per day</Text>
           </View>
         </View>
@@ -888,44 +912,40 @@ export default function HealthTracking() {
             </Text>
 
             <Text style={styles.modalLabel}>Goal Type</Text>
-            {/* UPDATED: Prevents adding duplicate goal types - disables existing types */}
             <View style={styles.goalTypeButtons}>
-              {(["steps", "distance", "calories"] as const).map(
-                (type) => {
-                  // Check if this goal type already exists (excluding the one being edited)
-                  const alreadyHasGoal = goals.some(g => g.type === type && g.goalId !== editingGoalId);
-                  return (
-                    <TouchableOpacity
-                      key={type}
+              {["steps", "distance", "calories", "weight"].map((type) => {
+                // Check if goal type already exists (except when editing)
+                const isDisabled =
+                  !editingGoalId && goals.some((g) => g.type === type);
+                const isActive = newGoal.type === type;
+
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.goalTypeButton,
+                      isActive && styles.goalTypeButtonActive,
+                      isDisabled && styles.goalTypeButtonDisabled,
+                    ]}
+                    onPress={() =>
+                      !isDisabled &&
+                      setNewGoal({ ...newGoal, type: type as any })
+                    }
+                    disabled={isDisabled}
+                  >
+                    <Text
                       style={[
-                        styles.goalTypeButton,
-                        newGoal.type === type && styles.goalTypeButtonActive,
-                        alreadyHasGoal && styles.goalTypeButtonDisabled,
+                        styles.goalTypeButtonText,
+                        isActive && styles.goalTypeButtonTextActive,
+                        isDisabled && styles.goalTypeButtonTextDisabled,
                       ]}
-                      onPress={() => {
-                        if (alreadyHasGoal) {
-                          Alert.alert("Already Exists", `You already have a ${type} goal. Delete it first to create a new one.`);
-                          return;
-                        }
-                        setNewGoal({ ...newGoal, type });
-                      }}
-                      disabled={alreadyHasGoal && !editingGoalId}
                     >
-                      <Text
-                        style={[
-                          styles.goalTypeButtonText,
-                          newGoal.type === type &&
-                            styles.goalTypeButtonTextActive,
-                          alreadyHasGoal && styles.goalTypeButtonTextDisabled,
-                        ]}
-                      >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                        {alreadyHasGoal && " ✓"}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }
-              )}
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                      {isDisabled && " ✓"}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
             <Text style={styles.modalLabel}>
@@ -984,9 +1004,15 @@ export default function HealthTracking() {
             />
 
             <Text style={styles.modalHint}>
-              {healthData?.weight && tempWeightGoal && !isNaN(parseFloat(tempWeightGoal))
-                ? `${Math.abs(healthData.weight - parseFloat(tempWeightGoal)).toFixed(1)} lbs to ${
-                    healthData.weight > parseFloat(tempWeightGoal) ? "lose" : "gain"
+              {healthData?.weight &&
+              tempWeightGoal &&
+              !isNaN(parseFloat(tempWeightGoal))
+                ? `${Math.abs(
+                    healthData.weight - parseFloat(tempWeightGoal)
+                  ).toFixed(1)} lbs to ${
+                    healthData.weight > parseFloat(tempWeightGoal)
+                      ? "lose"
+                      : "gain"
                   }`
                 : "Enter your target weight"}
             </Text>
@@ -1006,71 +1032,6 @@ export default function HealthTracking() {
                 onPress={handleSetWeightGoal}
               >
                 <Text style={styles.modalButtonSaveText}>Save Goal</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Height Modal */}
-      <Modal
-        visible={showHeightModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowHeightModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Set Your Height</Text>
-
-            <View style={styles.heightInputRow}>
-              <View style={styles.heightInputGroup}>
-                <Text style={styles.modalLabel}>Feet</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="5"
-                  keyboardType="numeric"
-                  value={tempHeightFeet}
-                  onChangeText={setTempHeightFeet}
-                  maxLength={1}
-                />
-              </View>
-
-              <View style={styles.heightInputGroup}>
-                <Text style={styles.modalLabel}>Inches</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="10"
-                  keyboardType="numeric"
-                  value={tempHeightInches}
-                  onChangeText={setTempHeightInches}
-                  maxLength={2}
-                />
-              </View>
-            </View>
-
-            <Text style={styles.modalHint}>
-              {tempHeightFeet && !isNaN(parseInt(tempHeightFeet))
-                ? `Total: ${(parseInt(tempHeightFeet) * 12) + (tempHeightInches ? parseInt(tempHeightInches) : 0)} inches`
-                : "Enter your height"}
-            </Text>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalButtonCancel}
-                onPress={() => {
-                  setShowHeightModal(false);
-                  setTempHeightFeet("");
-                  setTempHeightInches("");
-                }}
-              >
-                <Text style={styles.modalButtonCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalButtonSave}
-                onPress={handleSetHeight}
-              >
-                <Text style={styles.modalButtonSaveText}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1133,6 +1094,16 @@ const styles = StyleSheet.create({
     color: "#999",
     marginTop: 2,
   },
+  goalCount: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "600",
+  },
+  goalSubtitle: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 2,
+  },
   addButton: {
     fontSize: 16,
     color: "#007AFF",
@@ -1160,6 +1131,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginTop: 4,
+  },
+  chartContainer: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 8,
+    marginTop: 8,
+  },
+  chart: {
+    marginVertical: 8,
+    borderRadius: 16,
   },
   insightsGrid: {
     flexDirection: "row",
@@ -1226,6 +1208,23 @@ const styles = StyleSheet.create({
   goalsContainer: {
     gap: 12,
     marginTop: 8,
+  },
+  emptyGoalsCard: {
+    backgroundColor: "#f8f9fa",
+    padding: 32,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  emptyGoalsText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 8,
+  },
+  emptyGoalsSubtext: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
   },
   goalAchievedBadge: {
     fontSize: 12,
@@ -1396,32 +1395,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#007AFF",
     fontWeight: "600",
-  },
-  heightCard: {
-    backgroundColor: "#f8f9fa",
-    padding: 20,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  heightValue: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 4,
-  },
-  heightLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-  },
-  heightInputRow: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 16,
-  },
-  heightInputGroup: {
-    flex: 1,
   },
   buttonContainer: {
     padding: 16,
