@@ -5,10 +5,10 @@ export default function BlogLayout() {
     <Stack screenOptions={{ headerBackTitle: "Feed" }}>
       <Stack.Screen name="index" options={{ title: "Feed" }} />
 
-      <Stack.Screen name="./post/[postId]" options={{ title: "Article" }} />
+      <Stack.Screen name="post/[postId]" options={{ title: "Article" }} />
 
       <Stack.Screen
-        name="./author/[authorId]"
+        name="author/[authorId]"
         options={{ title: "Author Profile" }}
       />
     </Stack>

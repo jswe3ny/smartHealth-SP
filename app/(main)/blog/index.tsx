@@ -62,7 +62,7 @@ export default function Feed() {
       <View style={styles.cardContent}>
         {/* Author Row */}
         <View style={styles.authorRow}>
-          <Link href={`./author/${item.authorId}`} asChild>
+          <Link href={`/blog/author/${item.authorId}`} asChild>
             <TouchableOpacity style={styles.authorInfo}>
               <View style={styles.avatarContainer}>
                 {item.authorAvatar ? (
@@ -83,20 +83,28 @@ export default function Feed() {
                   <Text style={styles.authorName}>{item.authorName}</Text>
                   {item.isVerifiedOrg && (
                     <View style={styles.verifiedBadge}>
-                      <Ionicons name="checkmark-circle" size={16} color={CSUB_BLUE} />
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={16}
+                        color={CSUB_BLUE}
+                      />
                     </View>
                   )}
                 </View>
-                <Text style={styles.timestamp}>{formatDate(item.timestamp)}</Text>
+                <Text style={styles.timestamp}>
+                  {formatDate(item.timestamp)}
+                </Text>
               </View>
             </TouchableOpacity>
           </Link>
         </View>
 
         {/* Post Content - Clickable */}
-        <Link href={`./post/${item.postId}`} asChild>
+        <Link href={`/blog/post/${item.postId}`} asChild>
           <TouchableOpacity activeOpacity={0.7}>
-            <Text style={[styles.postTitle, index === 0 && styles.featuredTitle]}>
+            <Text
+              style={[styles.postTitle, index === 0 && styles.featuredTitle]}
+            >
               {item.title}
             </Text>
             <Text style={styles.postSummary} numberOfLines={3}>
@@ -117,13 +125,10 @@ export default function Feed() {
   const renderHeader = () => (
     <View style={styles.header}>
       {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
       </TouchableOpacity>
-      
+
       <View style={styles.headerContent}>
         <View style={styles.headerIconContainer}>
           <Ionicons name="nutrition" size={28} color={CSUB_BLUE} />
@@ -145,7 +150,8 @@ export default function Feed() {
       </View>
       <Text style={styles.emptyTitle}>No posts yet</Text>
       <Text style={styles.emptySubtitle}>
-        Check back soon for nutrition tips, recipes, and updates from the Runner Pantry!
+        Check back soon for nutrition tips, recipes, and updates from the Runner
+        Pantry!
       </Text>
     </View>
   );
