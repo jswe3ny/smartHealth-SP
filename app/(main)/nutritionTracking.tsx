@@ -318,7 +318,7 @@ export default function NutritionTracking() {
       {/* Today's Nutrition Summary */}
       <View style={styles.todayCard}>
         <View style={styles.todayHeader}>
-          <Text style={styles.todayTitle}>Today's Nutrition</Text>
+          <Text style={styles.todayTitle}>Today&apos;s Nutrition</Text>
           <Text style={styles.todayDate}>
             {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </Text>

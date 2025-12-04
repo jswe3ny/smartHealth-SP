@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 
-import { spacing, useThemeColors } from "@/assets/styles";
+import { spacing } from "@/assets/styles";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import {
   checkForAllergens,
@@ -34,13 +34,14 @@ import {
   MealSummary,
   ProductData,
 } from "@/utils/types/foodJournal.types";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export type NewFoodItem = Omit<FoodItem, "foodItemId">;
 
 export default function FoodJournal() {
   const { currentUser } = useAuth();
   const userData = useUserInfo();
-  const colors = useThemeColors();
+  //const colors = useThemeColors();
 
   const [mealName, setMealName] = useState("");
   const [mealType, setMealType] = useState("breakfast");
@@ -845,7 +846,8 @@ export default function FoodJournal() {
             <View style={styles.emptyState}>
               <Ionicons name="restaurant-outline" size={64} color="#999" />
               <Text style={styles.emptyStateText}>
-                No meals added yet.{"\n"}Tap "Add Meal" to get started!
+                No meals added yet.{"\n"}Tap &quot;Add Meal&quot; to get
+                started!
               </Text>
             </View>
           )}
@@ -874,7 +876,9 @@ export default function FoodJournal() {
                 {/* Today's Meals Section */}
                 {todaysMeals.length > 0 && (
                   <View style={styles.mealSummarySection}>
-                    <Text style={styles.mealSummaryTitle}>Today's Meals</Text>
+                    <Text style={styles.mealSummaryTitle}>
+                      Today&apos;s Meals
+                    </Text>
                     {todaysMeals.map((item) => (
                       <TouchableOpacity
                         key={item.id}
@@ -1201,7 +1205,7 @@ export default function FoodJournal() {
             {/* Meal Details Content */}
             {!loadingMealDetails && selectedMealDetails && (
               <ScrollView style={styles.mealDetailsContent}>
-                <Text style={styles.foodItemsTitle}>Food Items:</Text>
+                <Text style={styles.foodItemsTitle}>Food Items</Text>
 
                 {selectedMealDetails.foodItems.map((item, index) => (
                   <View key={index} style={styles.foodDetailCard}>
@@ -1240,7 +1244,7 @@ export default function FoodJournal() {
                 ))}
 
                 {/* Action Buttons */}
-                <View style={styles.mealActionButtons}>
+                <SafeAreaView style={styles.mealActionButtons}>
                   <TouchableOpacity
                     style={styles.duplicateMealButton}
                     onPress={handleDuplicateMeal}
@@ -1259,7 +1263,7 @@ export default function FoodJournal() {
                     <Ionicons name="trash" size={20} color="#fff" />
                     <Text style={styles.deleteMealButtonText}>Delete Meal</Text>
                   </TouchableOpacity>
-                </View>
+                </SafeAreaView>
               </ScrollView>
             )}
           </View>

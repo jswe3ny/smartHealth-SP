@@ -29,7 +29,7 @@ import {
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 
-const userData = useUserInfo();
+// const userData = useUserInfo();
 
 // Helper functions for metrics
 const calculateBMI = (weightLbs: number, heightInches: number): number => {

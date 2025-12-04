@@ -13,7 +13,7 @@ import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import { ProductData } from "@/utils/types/foodJournal.types";
 import { DailyHealthData } from "@/utils/types/health.types";
 import { Goal } from "@/utils/types/user.types";
-import { updateUserInfo } from "@/utils/user.repo";
+import { deleteGoal, updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
 import { Timestamp } from "@react-native-firebase/firestore";
 import { router } from "expo-router";
@@ -69,8 +69,6 @@ export default function Home() {
     targetValue: "",
   });
 
-  if (!currentUser) return null;
-
   // Fetch health and nutrition data
   const fetchData = React.useCallback(async () => {
     if (!currentUser?.uid) return;
@@ -115,6 +113,8 @@ export default function Home() {
     await fetchData();
     setRefreshing(false);
   }, [fetchData]);
+
+  if (!currentUser) return null;
 
   // Get today's date
   const today = new Date();
@@ -249,7 +249,7 @@ export default function Home() {
         style: "destructive",
         onPress: async () => {
           try {
-            const { deleteGoal } = require("@/utils/user.repo");
+            // const { deleteGoal } = require("@/utils/user.repo");
             await deleteGoal(currentUser.uid, "currentGoals", "goalId", goalId);
             Alert.alert("Success", "Goal deleted!");
           } catch (error) {
@@ -294,6 +294,7 @@ export default function Home() {
     }
 
     try {
+      // ERROR HERE NEED TOO FIX NO updateGoalInArray
       const { updateGoalInArray } = require("@/utils/user.repo");
 
       const updatedGoal: Goal = {
@@ -517,7 +518,7 @@ export default function Home() {
 
         {/* Today's Progress */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Today's Progress</Text>
+          <Text style={styles.sectionTitle}>📊 Today&apos;s Progress</Text>
 
           <View style={styles.progressCard}>
             <View style={styles.progressRow}>
@@ -703,7 +704,7 @@ export default function Home() {
             <View style={styles.emptyGoals}>
               <Text style={styles.emptyGoalsText}>No goals yet</Text>
               <Text style={styles.emptyGoalsSubtext}>
-                Tap "Add Goal" to get started!
+                Tap &quot;Add Goal&quot; to get started!
               </Text>
             </View>
           )}
