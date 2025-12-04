@@ -124,7 +124,7 @@ export default function Home() {
     day: "numeric",
   });
 
-  const currentGoalCount = userData.profile?.currentGoals?.length || 0;
+  const currentGoalCount = userData.profile?.currentGoals?.filter((goal) => goal.type !== 'weight').length || 0;
 
   // Check for prohibited ingredients
   // Handle Quick Scan
@@ -561,7 +561,9 @@ export default function Home() {
 
           {userData.profile?.currentGoals &&
           userData.profile.currentGoals.length > 0 ? (
-            userData.profile.currentGoals.map((goal) => (
+            userData.profile.currentGoals
+              .filter((goal) => goal.type !== 'weight')
+              .map((goal) => (
               <TouchableOpacity
                 key={goal.goalId}
                 style={styles.goalCard}
