@@ -13,7 +13,7 @@ import { calculateDailyNutritionFromMeals } from "@/utils/nutrition.repo";
 import { ProductData } from "@/utils/types/foodJournal.types";
 import { DailyHealthData } from "@/utils/types/health.types";
 import { Goal } from "@/utils/types/user.types";
-import { deleteGoal, updateUserInfo } from "@/utils/user.repo";
+import { deleteGoal, updateGoal, updateUserInfo } from "@/utils/user.repo";
 import { Ionicons } from "@expo/vector-icons";
 import { Timestamp } from "@react-native-firebase/firestore";
 import { router } from "expo-router";
@@ -294,11 +294,7 @@ export default function Home() {
     }
 
     try {
-      // ERROR HERE NEED TOO FIX NO updateGoalInArray
-      const { updateGoalInArray } = require("@/utils/user.repo");
-
-      const updatedGoal: Goal = {
-        ...editingGoal,
+      const updates: Partial<Goal> = {
         name: newGoal.name,
         description: newGoal.description,
         type: newGoal.type,
@@ -307,12 +303,10 @@ export default function Home() {
           : undefined,
       };
 
-      await updateGoalInArray(
+      await updateGoal(
         currentUser.uid,
-        "currentGoals",
-        "goalId",
         editingGoal.goalId!,
-        updatedGoal
+        updates
       );
 
       setShowEditGoalModal(false);
