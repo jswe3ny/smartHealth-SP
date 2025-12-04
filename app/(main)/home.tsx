@@ -124,7 +124,9 @@ export default function Home() {
     day: "numeric",
   });
 
-  const currentGoalCount = userData.profile?.currentGoals?.filter((goal) => goal.type !== 'weight').length || 0;
+  const currentGoalCount =
+    userData.profile?.currentGoals?.filter((goal) => goal.type !== "weight")
+      .length || 0;
 
   // Check for prohibited ingredients
   // Handle Quick Scan
@@ -303,11 +305,7 @@ export default function Home() {
           : undefined,
       };
 
-      await updateGoal(
-        currentUser.uid,
-        editingGoal.goalId!,
-        updates
-      );
+      await updateGoal(currentUser.uid, editingGoal.goalId!, updates);
 
       setShowEditGoalModal(false);
       setEditingGoal(null);
@@ -562,140 +560,142 @@ export default function Home() {
           {userData.profile?.currentGoals &&
           userData.profile.currentGoals.length > 0 ? (
             userData.profile.currentGoals
-              .filter((goal) => goal.type !== 'weight')
+              .filter((goal) => goal.type !== "weight")
               .map((goal) => (
-              <TouchableOpacity
-                key={goal.goalId}
-                style={styles.goalCard}
-                onLongPress={() => {
-                  Alert.alert(
-                    "Manage Goal",
-                    `What would you like to do with "${goal.name}"?`,
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Edit",
-                        onPress: () => handleEditGoal(goal),
-                      },
-                      {
-                        text: "Delete",
-                        style: "destructive",
-                        onPress: () =>
-                          goal.goalId && handleDeleteGoal(goal.goalId),
-                      },
-                    ]
-                  );
-                }}
-              >
-                <View style={styles.goalHeader}>
-                  <View style={styles.goalLeft}>
-                    {goal.type && (
-                      <View
-                        style={[
-                          styles.goalBadge,
-                          {
-                            backgroundColor: [
-                              "steps",
-                              "distance",
-                              "calories",
-                              "activeMinutes",
-                              "weight",
-                            ].includes(goal.type)
-                              ? "#E3F2FD"
-                              : "#FFF3E0",
-                          },
-                        ]}
-                      >
-                        <Text
+                <TouchableOpacity
+                  key={goal.goalId}
+                  style={styles.goalCard}
+                  onLongPress={() => {
+                    Alert.alert(
+                      "Manage Goal",
+                      `What would you like to do with "${goal.name}"?`,
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Edit",
+                          onPress: () => handleEditGoal(goal),
+                        },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: () =>
+                            goal.goalId && handleDeleteGoal(goal.goalId),
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <View style={styles.goalHeader}>
+                    <View style={styles.goalLeft}>
+                      {goal.type && (
+                        <View
                           style={[
-                            styles.goalBadgeText,
+                            styles.goalBadge,
                             {
-                              color: [
+                              backgroundColor: [
                                 "steps",
                                 "distance",
                                 "calories",
                                 "activeMinutes",
                                 "weight",
                               ].includes(goal.type)
-                                ? "#1976D2"
-                                : "#F57C00",
+                                ? "#E3F2FD"
+                                : "#FFF3E0",
                             },
                           ]}
                         >
-                          {[
-                            "steps",
-                            "distance",
-                            "calories",
-                            "activeMinutes",
-                            "weight",
-                          ].includes(goal.type)
-                            ? "HEALTH"
-                            : "NUTRITION"}
+                          <Text
+                            style={[
+                              styles.goalBadgeText,
+                              {
+                                color: [
+                                  "steps",
+                                  "distance",
+                                  "calories",
+                                  "activeMinutes",
+                                  "weight",
+                                ].includes(goal.type)
+                                  ? "#1976D2"
+                                  : "#F57C00",
+                              },
+                            ]}
+                          >
+                            {[
+                              "steps",
+                              "distance",
+                              "calories",
+                              "activeMinutes",
+                              "weight",
+                            ].includes(goal.type)
+                              ? "HEALTH"
+                              : "NUTRITION"}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.goalName}>{goal.name}</Text>
+                      {goal.targetValue && (
+                        <Text style={styles.goalTarget}>
+                          Target: {goal.targetValue.toLocaleString()}
+                          {getGoalUnit(goal.type)}
+                        </Text>
+                      )}
+                    </View>
+                    <Ionicons name="ellipsis-vertical" size={20} color="#666" />
+                  </View>
+                  {goal.description && (
+                    <Text style={styles.goalDescription}>
+                      {goal.description}
+                    </Text>
+                  )}
+
+                  {/* Progress Bar */}
+                  {goal.targetValue && goal.type && (
+                    <View style={styles.goalProgressSection}>
+                      <View style={styles.goalProgressHeader}>
+                        <Text style={styles.goalProgressValue}>
+                          {getCurrentValueForGoal(goal).toLocaleString()} /{" "}
+                          {goal.targetValue.toLocaleString()}
+                          {getGoalUnit(goal.type)}
                         </Text>
                       </View>
-                    )}
-                    <Text style={styles.goalName}>{goal.name}</Text>
-                    {goal.targetValue && (
-                      <Text style={styles.goalTarget}>
-                        Target: {goal.targetValue.toLocaleString()}
-                        {getGoalUnit(goal.type)}
-                      </Text>
-                    )}
-                  </View>
-                  <Ionicons name="ellipsis-vertical" size={20} color="#666" />
-                </View>
-                {goal.description && (
-                  <Text style={styles.goalDescription}>{goal.description}</Text>
-                )}
-
-                {/* Progress Bar */}
-                {goal.targetValue && goal.type && (
-                  <View style={styles.goalProgressSection}>
-                    <View style={styles.goalProgressHeader}>
-                      <Text style={styles.goalProgressValue}>
-                        {getCurrentValueForGoal(goal).toLocaleString()} /{" "}
-                        {goal.targetValue.toLocaleString()}
-                        {getGoalUnit(goal.type)}
+                      <View style={styles.goalProgressBarContainer}>
+                        <View
+                          style={[
+                            styles.goalProgressBar,
+                            {
+                              width: `${Math.min(
+                                calculateProgress(
+                                  getCurrentValueForGoal(goal),
+                                  goal.targetValue
+                                ),
+                                100
+                              )}%`,
+                              backgroundColor:
+                                calculateProgress(
+                                  getCurrentValueForGoal(goal),
+                                  goal.targetValue
+                                ) >= 100
+                                  ? "#4CAF50"
+                                  : "#2196F3",
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.goalProgressText}>
+                        {calculateProgress(
+                          getCurrentValueForGoal(goal),
+                          goal.targetValue
+                        ).toFixed(0)}
+                        % Complete
+                        {calculateProgress(
+                          getCurrentValueForGoal(goal),
+                          goal.targetValue
+                        ) >= 100 && " ✓"}
                       </Text>
                     </View>
-                    <View style={styles.goalProgressBarContainer}>
-                      <View
-                        style={[
-                          styles.goalProgressBar,
-                          {
-                            width: `${Math.min(
-                              calculateProgress(
-                                getCurrentValueForGoal(goal),
-                                goal.targetValue
-                              ),
-                              100
-                            )}%`,
-                            backgroundColor:
-                              calculateProgress(
-                                getCurrentValueForGoal(goal),
-                                goal.targetValue
-                              ) >= 100
-                                ? "#4CAF50"
-                                : "#2196F3",
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text style={styles.goalProgressText}>
-                      {calculateProgress(
-                        getCurrentValueForGoal(goal),
-                        goal.targetValue
-                      ).toFixed(0)}
-                      % Complete
-                      {calculateProgress(
-                        getCurrentValueForGoal(goal),
-                        goal.targetValue
-                      ) >= 100 && " ✓"}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))
+                  )}
+                </TouchableOpacity>
+              ))
           ) : (
             <View style={styles.emptyGoals}>
               <Text style={styles.emptyGoalsText}>No goals yet</Text>
@@ -957,7 +957,7 @@ export default function Home() {
       >
         <View style={styles.modalOverlay}>
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
-            <View style={styles.modalContent}>
+            <SafeAreaView style={styles.modalContent}>
               <Text style={styles.modalTitle}>Edit Goal</Text>
 
               <Text style={styles.modalLabel}>Goal Name</Text>
@@ -993,7 +993,7 @@ export default function Home() {
                       styles.goalTypeButton,
                       newGoal.type === type.value &&
                         styles.goalTypeButtonActive,
-                        styles.goalTypeButtonDisabled,
+                      styles.goalTypeButtonDisabled,
                     ]}
                     onPress={() => {}}
                     disabled={true}
@@ -1003,7 +1003,7 @@ export default function Home() {
                         styles.goalTypeButtonText,
                         newGoal.type === type.value &&
                           styles.goalTypeButtonTextActive,
-                          styles.goalTypeButtonDisabled,
+                        styles.goalTypeButtonDisabled,
                       ]}
                     >
                       {type.label}
@@ -1037,7 +1037,7 @@ export default function Home() {
                         styles.goalTypeButtonText,
                         newGoal.type === type.value &&
                           styles.goalTypeButtonTextActive,
-                          styles.goalTypeButtonDisabled,
+                        styles.goalTypeButtonDisabled,
                       ]}
                     >
                       {type.label}
@@ -1087,7 +1087,7 @@ export default function Home() {
                   <Text style={styles.modalButtonSaveText}>Save Changes</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </SafeAreaView>
           </ScrollView>
         </View>
       </Modal>
@@ -1624,7 +1624,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     width: "100%",
-    maxWidth: 400,
+    // maxWidth: 400,
     alignSelf: "center",
   },
   modalTitle: {
