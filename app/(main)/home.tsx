@@ -1020,6 +1020,7 @@ export default function Home() {
                   { value: "protein", label: "Protein" },
                   { value: "carbs", label: "Carbs" },
                   { value: "fat", label: "Fat" },
+                  { value: "fiber", label: "Fiber" },
                   { value: "sugar", label: "Sugar" },
                 ].map((type) => (
                   <TouchableOpacity
@@ -1618,13 +1619,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
+    width: "100%", 
   },
   modalContent: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 20,
     width: "100%",
-    maxWidth: 400,
+    //maxWidth: 400,
     alignSelf: "center",
   },
   modalTitle: {
